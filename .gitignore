@@ -4,4 +4,4 @@ test/.placeholder
 build
 node_modules
 .vscode
-soliumrc.json
+unicly-core-main
