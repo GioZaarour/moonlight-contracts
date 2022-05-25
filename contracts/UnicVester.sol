@@ -99,7 +99,7 @@ contract UnicVester is Ownable {
         _safeTransfer(token, address(pair), amountIn);
         pair.swap(amount0Out, amount1Out, factory.getPair(weth, unic), new bytes(0));
         return amountOut;
-    }
+    } 
 
     // Converts WETH to Unic
     function _toUNIC(uint256 amountIn) internal {

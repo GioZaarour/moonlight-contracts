@@ -1,29 +1,13 @@
 pragma solidity ^0.8.4;
 
-import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
-import "@openzeppelin/contracts/access/Ownable.sol";
-import "@openzeppelin/contracts/token/ERC20/extensions/ERC20Capped.sol";
-import "@openzeppelin/contracts/token/ERC20/extensions/ERC20Burnable.sol";
+import "@openzeppelin/contracts-upgradeable/token/ERC20/extensions/ERC20BurnableUpgradeable.sol";
+import "@openzeppelin/contracts-upgradeable/utils/math/SafeMathUpgradeable.sol";
 
-//NOT USING THIS FOR MVP
-
-// Unic with Governance.
-contract Unic is ERC20, ERC20Capped, ERC20Burnable, Ownable {
-    constructor ()  
-        ERC20("UNIC", "UNIC")
-        ERC20Capped(1_000_000e18)
-    { //figure this out (tokenomics above)
-        // Mint 1 MOON
-        _mint(_msgSender(), 1e18);
-        _moveDelegates(address(0), _delegates[_msgSender()], 1e18);
-    }
-
-    /// @notice Creates `_amount` token to `_to`. Must only be called by the owner.
-    function mint(address _to, uint256 _amount) public onlyOwner returns (bool) {
-        _mint(_to, _amount);
-        _moveDelegates(address(0), _delegates[_to], _amount);
-        return true;
-    }
+/**
+ * Expand the ERC20Burnable contract to include a governance voting feature.
+ */
+abstract contract ERC20VotesUpgradeable is ERC20BurnableUpgradeable  {
+    using SafeMathUpgradeable for uint256;
 
     // Copied and modified from YAM code:
     // https://github.com/yam-finance/yam-protocol/blob/master/contracts/token/YAMGovernanceStorage.sol
@@ -55,7 +39,7 @@ contract Unic is ERC20, ERC20Capped, ERC20Burnable, Ownable {
     /// @notice A record of states for signing / validating signatures
     mapping (address => uint) public nonces;
 
-      /// @notice An event thats emitted when an account changes its delegate
+    /// @notice An event thats emitted when an account changes its delegate
     event DelegateChanged(address indexed delegator, address indexed fromDelegate, address indexed toDelegate);
 
     /// @notice An event thats emitted when a delegate account's vote balance changes
@@ -66,17 +50,17 @@ contract Unic is ERC20, ERC20Capped, ERC20Burnable, Ownable {
      * @param delegator The address to get delegatee for
      */
     function delegates(address delegator)
-        external
-        view
-        returns (address)
+    external
+    view
+    returns (address)
     {
         return _delegates[delegator];
     }
 
-   /**
-    * @notice Delegate votes from `msg.sender` to `delegatee`
-    * @param delegatee The address to delegate votes to
-    */
+    /**
+     * @notice Delegate votes from `msg.sender` to `delegatee`
+     * @param delegatee The address to delegate votes to
+     */
     function delegate(address delegatee) external {
         return _delegate(msg.sender, delegatee);
     }
@@ -98,7 +82,7 @@ contract Unic is ERC20, ERC20Capped, ERC20Burnable, Ownable {
         bytes32 r,
         bytes32 s
     )
-        external
+    external
     {
         bytes32 domainSeparator = keccak256(
             abi.encode(
@@ -139,9 +123,9 @@ contract Unic is ERC20, ERC20Capped, ERC20Burnable, Ownable {
      * @return The number of current votes for `account`
      */
     function getCurrentVotes(address account)
-        external
-        view
-        returns (uint256)
+    external
+    view
+    returns (uint256)
     {
         uint32 nCheckpoints = numCheckpoints[account];
         return nCheckpoints > 0 ? checkpoints[account][nCheckpoints - 1].votes : 0;
@@ -155,9 +139,9 @@ contract Unic is ERC20, ERC20Capped, ERC20Burnable, Ownable {
      * @return The number of votes the account had as of the given block
      */
     function getPriorVotes(address account, uint blockNumber)
-        external
-        view
-        returns (uint256)
+    external
+    view
+    returns (uint256)
     {
         require(blockNumber < block.number, "UNIC::getPriorVotes: not yet determined");
 
@@ -193,7 +177,7 @@ contract Unic is ERC20, ERC20Capped, ERC20Burnable, Ownable {
     }
 
     function _delegate(address delegator, address delegatee)
-        internal
+    internal
     {
         address currentDelegate = _delegates[delegator];
         uint256 delegatorBalance = balanceOf(delegator); // balance of underlying UNICs (not scaled);
@@ -230,7 +214,7 @@ contract Unic is ERC20, ERC20Capped, ERC20Burnable, Ownable {
         uint256 oldVotes,
         uint256 newVotes
     )
-        internal
+    internal
     {
         uint32 blockNumber = safe32(block.number, "UNIC::_writeCheckpoint: block number exceeds 32 bits");
 
@@ -249,16 +233,9 @@ contract Unic is ERC20, ERC20Capped, ERC20Burnable, Ownable {
         return uint32(n);
     }
 
-    function getChainId() internal pure returns (uint) {
+    function getChainId() internal view returns (uint) {
         uint256 chainId;
         assembly { chainId := chainid() }
         return chainId;
-    }
-
-    /**
-     * @dev See {ERC20-_beforeTokenTransfer}.
-     */
-    function _beforeTokenTransfer(address from, address to, uint256 amount) internal virtual override(ERC20) {
-        super._beforeTokenTransfer(from, to, amount);
     }
 }

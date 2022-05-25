@@ -8,7 +8,7 @@ import "@openzeppelin/contracts/token/ERC1155/utils/ERC1155Receiver.sol";
 import "@openzeppelin/contracts/utils/math/SafeMath.sol";
 import "./interfaces/IUnicFactory.sol";
 
-//gio- i believe this is the vault contract that holds NFTs and ETH collected from token sale
+//?this is the vault contract that holds NFTs and ETH collected from token sale?
 
 contract Converter is ERC20, ERC1155Receiver {
     using SafeMath for uint;

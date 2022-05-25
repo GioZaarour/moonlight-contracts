@@ -18,14 +18,14 @@ contract UnicFactory is IUnicFactory {
     
     mapping(address => uint) public override getUToken;
     
-    event TokenCreated(address indexed caller, address indexed uToken);
+    //event TokenCreated(address indexed caller, address indexed uToken);
     
     function uTokensLength() external override view returns (uint) {
         return uTokens.length;
     }
     
     // Constructor just needs to know who gets to set feeTo address and default fee amount`
-    constructor(address _feeToSetter) public {
+    constructor(address _feeToSetter) {
         feeToSetter = _feeToSetter;
     }
     

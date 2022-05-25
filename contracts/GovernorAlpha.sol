@@ -9,6 +9,8 @@
 // Ctrl+f for XXX to see all the modifications.
 // uint96s are changed to uint256s for simplicity and safety.
 
+//90% certain that this is governance contract of the unicly DAO - we don't need that
+
 pragma solidity ^0.8.4;
 pragma experimental ABIEncoderV2;
 
