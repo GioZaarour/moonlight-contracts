@@ -1,4 +1,4 @@
-# unicly
+# moonlight
 
 ### Build instructions
 `yarn`
@@ -11,7 +11,7 @@
 ### Truffle Migration
 
 #### Local
-Use the following commands to spawn a local blockchain and deploy unicly contracts:
+Use the following commands to spawn a local blockchain and deploy moonlight contracts:
 
 `yarn`
 
@@ -20,7 +20,7 @@ Use the following commands to spawn a local blockchain and deploy unicly contrac
 `migrate --reset`
 
 #### Rinkeby
-Use the following commands to deploy unicly contracts onto Rinkeby:
+Use the following commands to deploy moonlight contracts onto Rinkeby:
 
 `yarn`
 
