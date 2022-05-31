@@ -1,10 +1,13 @@
-.DS_Store
-contracts/.placeholder
-test/.placeholder
 build
 node_modules
+.idea
+yarn-error.log
+.openzeppelin
 .vscode
-unicly-core-main
-contracts-orig
-OLD
-contracts/mvp-VOID
+
+# Openzeppelin files for local deploys
+.openzeppelin/unknown-1337.json
+
+# Hardhat stuff
+artifacts/
+cache/

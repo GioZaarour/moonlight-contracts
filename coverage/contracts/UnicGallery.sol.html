@@ -1,0 +1,218 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <title>Code coverage report for contracts/UnicGallery.sol</title>
+    <meta charset="utf-8" />
+    <link rel="stylesheet" href="../prettify.css" />
+    <link rel="stylesheet" href="../base.css" />
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <style type='text/css'>
+        .coverage-summary .sorter {
+            background-image: url(../sort-arrow-sprite.png);
+        }
+    </style>
+</head>
+<body>
+<div class='wrapper'>
+  <div class='pad1'>
+    <h1>
+      <a href="../index.html">all files</a> / <a href="index.html">contracts/</a> UnicGallery.sol
+    </h1>
+    <div class='clearfix'>
+      <div class='fl pad1y space-right2'>
+        <span class="strong">0% </span>
+        <span class="quiet">Statements</span>
+        <span class='fraction'>0/12</span>
+      </div>
+      <div class='fl pad1y space-right2'>
+        <span class="strong">0% </span>
+        <span class="quiet">Branches</span>
+        <span class='fraction'>0/2</span>
+      </div>
+      <div class='fl pad1y space-right2'>
+        <span class="strong">0% </span>
+        <span class="quiet">Functions</span>
+        <span class='fraction'>0/3</span>
+      </div>
+      <div class='fl pad1y space-right2'>
+        <span class="strong">0% </span>
+        <span class="quiet">Lines</span>
+        <span class='fraction'>0/12</span>
+      </div>
+    </div>
+  </div>
+  <div class='status-line low'></div>
+<pre><table class="coverage">
+<tr><td class="line-count quiet">1
+2
+3
+4
+5
+6
+7
+8
+9
+10
+11
+12
+13
+14
+15
+16
+17
+18
+19
+20
+21
+22
+23
+24
+25
+26
+27
+28
+29
+30
+31
+32
+33
+34
+35
+36
+37
+38
+39
+40
+41
+42
+43
+44
+45
+46
+47
+48
+49
+50
+51
+52</td><td class="line-coverage quiet"><span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span></td><td class="text"><pre class="prettyprint lang-js">pragma solidity 0.6.12;
+&nbsp;
+import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
+import "@openzeppelin/contracts/math/SafeMath.sol";
+&nbsp;
+// Copied from SushiBar: https://github.com/sushiswap/sushiswap/blob/master/contracts/SushiBar.sol
+// Modified by 0xLeia
+&nbsp;
+// UnicGallery is the coolest gallery in town. You come in with some Unic, and leave with more! The longer you stay, the more Unic you get.
+//
+// This contract handles swapping to and from xUnic, UnicSwap's staking token.
+contract UnicGallery is ERC20("UnicGallery", "xUNIC") {
+    using SafeMath for uint256;
+    IERC20 public unic;
+&nbsp;
+    // Define the Unic token contract
+<span class="fstat-no" title="function not covered" >    constructor(IERC20 _unic) public {</span>
+<span class="cstat-no" title="statement not covered" >        unic = _unic</span>;
+    }
+&nbsp;
+    // Enter the gallery. Pay some UNICs. Earn some shares.
+    // Locks Unic and mints xUnic
+<span class="fstat-no" title="function not covered" >    function enter(uint256 _amount) public {</span>
+        // Gets the amount of Unic locked in the contract
+<span class="cstat-no" title="statement not covered" >        uint256 totalUnic = unic.balanceOf(address(this));</span>
+        // Gets the amount of xUnic in existence
+<span class="cstat-no" title="statement not covered" >        uint256 totalShares = totalSupply();</span>
+        // If no xUnic exists, mint it 1:1 to the amount put in
+<span class="cstat-no" title="statement not covered" >        if (totalShares == 0 || totalUnic == 0) {</span>
+<span class="cstat-no" title="statement not covered" >            _mint(msg.sender, _amount)</span>;
+        } 
+        // Calculate and mint the amount of xUnic the Unic is worth. The ratio will change overtime, as xUnic is burned/minted and Unic deposited + gained from fees / withdrawn.
+        else {
+<span class="cstat-no" title="statement not covered" >            uint256 what = _amount.mul(totalShares).div(totalUnic);</span>
+<span class="cstat-no" title="statement not covered" >            _mint(msg.sender, what)</span>;
+        }
+        // Lock the Unic in the contract
+<span class="cstat-no" title="statement not covered" >        unic.transferFrom(msg.sender, address(this), _amount)</span>;
+    }
+&nbsp;
+    // Leave the gallery. Claim back your UNICs.
+    // Unclocks the staked + gained Unic and burns xUnic
+<span class="fstat-no" title="function not covered" >    function leave(uint256 _share) public {</span>
+        // Gets the amount of xUnic in existence
+<span class="cstat-no" title="statement not covered" >        uint256 totalShares = totalSupply();</span>
+        // Calculates the amount of Unic the xUnic is worth
+<span class="cstat-no" title="statement not covered" >        uint256 what = _share.mul(unic.balanceOf(address(this))).div(totalShares);</span>
+<span class="cstat-no" title="statement not covered" >        _burn(msg.sender, _share)</span>;
+<span class="cstat-no" title="statement not covered" >        unic.transfer(msg.sender, what)</span>;
+    }
+}</pre></td></tr>
+</table></pre>
+<div class='push'></div><!-- for sticky footer -->
+</div><!-- /wrapper -->
+<div class='footer quiet pad2 space-top1 center small'>
+  Code coverage
+  generated by <a href="http://istanbul-js.org/" target="_blank">istanbul</a> at Thu May 27 2021 19:22:05 GMT-0400 (Eastern Daylight Time)
+</div>
+</div>
+<script src="../prettify.js"></script>
+<script>
+window.onload = function () {
+        if (typeof prettyPrint === 'function') {
+            prettyPrint();
+        }
+};
+</script>
+<script src="../sorter.js"></script>
+</body>
+</html>

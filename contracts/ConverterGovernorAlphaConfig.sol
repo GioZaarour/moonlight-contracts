@@ -1,4 +1,4 @@
-pragma solidity ^0.8.4;
+pragma solidity 0.6.12;
 
 import "@openzeppelin/contracts/access/Ownable.sol";
 
@@ -31,7 +31,7 @@ contract ConverterGovernorAlphaConfig is Ownable {
     event NewGracePeriod(uint indexed newGracePeriod);
     event NewDelay(uint indexed newDelay);
 
-    constructor () {
+    constructor () public {
         quorumVotesDivider = 16; // 62.5%
         proposalThresholdDivider = 2000; // 0.5%
         proposalMaxOperations = 10;

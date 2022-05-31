@@ -1,17 +1,11 @@
-// File: contracts/AuctionHandler.sol
+pragma solidity 0.6.12;
 
-pragma solidity ^0.8.4;
-
-//import "@openzeppelin/contracts-upgradeable/token/ERC20/IERC20Upgradeable.sol";
-import "@openzeppelin/contracts-upgradeable/utils/math/SafeMathUpgradeable.sol";
-//import "@openzeppelin/contracts-upgradeable/utils/AddressUpgradeable.sol";
-import "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
+import "@openzeppelin/contracts-upgradeable/token/ERC20/IERC20Upgradeable.sol";
+import "@openzeppelin/contracts-upgradeable/math/SafeMathUpgradeable.sol";
+import "@openzeppelin/contracts-upgradeable/proxy/Initializable.sol";
 import "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
-//import "./interfaces/IUnicFactory.sol";
-//import "./interfaces/IConverter.sol";
-//import "./interfaces/IProxyTransaction.sol";
-//import "./interfaces/IGetAuctionInfo.sol";
-import "./Converterv2.sol";
+import './interfaces/IMoonFactory.sol';
+import './Converter.sol';
 
 contract AuctionHandler is Initializable, OwnableUpgradeable {
     using SafeMathUpgradeable for uint;
@@ -19,14 +13,14 @@ contract AuctionHandler is Initializable, OwnableUpgradeable {
     struct AuctionInfo {
         uint startTime;
         uint endTime;
-        address uToken;
-        uint256 nftIndexForUToken;
+        address moonToken;
+        uint256 nftIndexForMoonToken;
         bool claimed;
     }
 
     struct Bid {
-        address bidder;
-        uint256 amount;
+    	address bidder;
+    	uint256 amount;
     }
 
     // Info of each pool.
@@ -36,11 +30,11 @@ contract AuctionHandler is Initializable, OwnableUpgradeable {
     mapping(uint256 => Bid) public bids;
     // Auction index to user address to amount
     mapping(uint256 => mapping(address => uint256)) public bidRefunds;
-    // uToken address to NFT index to auction index
+    // moonToken address to NFT index to auction index
     mapping(address => mapping(uint256 => uint256)) public auctionIndex;
-    // uToken address to NFT index to bool
+    // moonToken address to NFT index to bool
     mapping(address => mapping(uint256 => bool)) public auctionStarted;
-    // uToken address to vault balances
+    // moonToken address to vault balances
     mapping(address => uint256) public vaultBalances;
 
     address public factory;
@@ -56,7 +50,7 @@ contract AuctionHandler is Initializable, OwnableUpgradeable {
     address public feeToSetter;
     address public feeTo;
 
-    event AuctionCreated(uint256 indexed auctionId, address indexed uToken, uint256 nftIndexForUToken, uint startTime, uint indexed endTime);
+    event AuctionCreated(uint256 indexed auctionId, address indexed moonToken, uint256 nftIndexForMoonToken, uint startTime, uint indexed endTime);
     event BidCreated(uint256 indexed auctionId, address indexed bidder, uint256 amount, uint indexed endTime);
     event BidRemoved(uint256 indexed auctionId, address indexed bidder);
     event ClaimedNFT(uint256 indexed auctionId, address indexed winner);
@@ -88,17 +82,17 @@ contract AuctionHandler is Initializable, OwnableUpgradeable {
         return auctionInfo.length;
     }
 
-    function newAuction(address _uToken, uint256 _nftIndexForUToken) public payable {
-        require(IUnicFactory(factory).getUToken(_uToken) != 0 || IUnicFactory(factory).uTokens(0) == _uToken,
-            "AuctionHandler: uToken contract must be valid");
-        require(Converter(_uToken).active(), "AuctionHandler: Can not bid on inactive uToken");
-        (address contractAddr, , , uint256 triggerPrice) = Converter(_uToken).nfts(_nftIndexForUToken);
+    function newAuction(address _moonToken, uint256 _nftIndexForMoonToken) public payable {
+        require(IMoonFactory(factory).getMoonToken(_moonToken) != 0 || IMoonFactory(factory).moonTokens(0) == _moonToken, 
+            "AuctionHandler: moonToken contract must be valid");
+        require(Converter(_moonToken).active(), "AuctionHandler: Can not bid on inactive moonToken");
+        (address contractAddr, , , uint256 triggerPrice) = Converter(_moonToken).nfts(_nftIndexForMoonToken);
         // Check that nft index exists on vault contract
         require(contractAddr != address(0), "AuctionHandler: NFT index must exist");
         // Check that bid meets reserve price
         require(triggerPrice <= msg.value, "AuctionHandler: Starting bid must be higher than trigger price");
-        require(!auctionStarted[_uToken][_nftIndexForUToken], "AuctionHandler: NFT already on auction");
-        auctionStarted[_uToken][_nftIndexForUToken] = true;
+        require(!auctionStarted[_moonToken][_nftIndexForMoonToken], "AuctionHandler: NFT already on auction");
+        auctionStarted[_moonToken][_nftIndexForMoonToken] = true;
 
         uint256 currentIndex = auctionInfo.length;
         uint auctionEndTime = getBlockTimestamp().add(duration);
@@ -107,26 +101,26 @@ contract AuctionHandler is Initializable, OwnableUpgradeable {
             AuctionInfo({
                 startTime: getBlockTimestamp(),
                 endTime: auctionEndTime,
-                uToken: _uToken,
-                nftIndexForUToken: _nftIndexForUToken,
+                moonToken: _moonToken,
+                nftIndexForMoonToken: _nftIndexForMoonToken,
                 claimed: false
             })
         );
 
-        auctionIndex[_uToken][_nftIndexForUToken] = currentIndex;
+        auctionIndex[_moonToken][_nftIndexForMoonToken] = currentIndex;
         uint256 fee = msg.value.div(feeDivisor);
-        vaultBalances[_uToken] = vaultBalances[_uToken].add(msg.value.sub(fee));
+        vaultBalances[_moonToken] = vaultBalances[_moonToken].add(msg.value.sub(fee));
         bids[currentIndex] = Bid(msg.sender, msg.value);
         sendFee(fee);
 
-        emit AuctionCreated(currentIndex, _uToken, _nftIndexForUToken, getBlockTimestamp(), auctionEndTime);
+        emit AuctionCreated(currentIndex, _moonToken, _nftIndexForMoonToken, getBlockTimestamp(), auctionEndTime);
         emit BidCreated(currentIndex, msg.sender, msg.value, auctionEndTime);
     }
 
     function bid(uint256 _auctionId) public payable {
         AuctionInfo storage thisAuction = auctionInfo[_auctionId];
         require(getBlockTimestamp() < thisAuction.endTime, "AuctionHandler: Auction for NFT ended");
-        require(Converter(thisAuction.uToken).active(), "AuctionHandler: Can not bid on inactive uToken");
+        require(Converter(thisAuction.moonToken).active(), "AuctionHandler: Can not bid on inactive moonToken");
 
         Bid storage topBid = bids[_auctionId];
         require(topBid.bidder != msg.sender, "AuctionHandler: You have an active bid");
@@ -141,7 +135,7 @@ contract AuctionHandler is Initializable, OwnableUpgradeable {
 
         bidRefunds[_auctionId][topBid.bidder] = topBid.amount;
         uint256 fee = (msg.value.sub(topBid.amount)).div(feeDivisor);
-        vaultBalances[thisAuction.uToken] = vaultBalances[thisAuction.uToken].add(msg.value).sub(topBid.amount).sub(fee);
+        vaultBalances[thisAuction.moonToken] = vaultBalances[thisAuction.moonToken].add(msg.value).sub(topBid.amount).sub(fee);
 
         topBid.bidder = msg.sender;
         topBid.amount = msg.value;
@@ -174,19 +168,19 @@ contract AuctionHandler is Initializable, OwnableUpgradeable {
 
         thisAuction.claimed = true;
 
-        require(Converter(thisAuction.uToken).claimNFT(thisAuction.nftIndexForUToken, topBid.bidder), "AuctionHandler: Claim failed");
+        require(Converter(thisAuction.moonToken).claimNFT(thisAuction.nftIndexForMoonToken, topBid.bidder), "AuctionHandler: Claim failed");
 
         emit ClaimedNFT(_auctionId, topBid.bidder);
     }
 
-    function burnAndRedeem(address _uToken, uint256 _amount) public {
-        require(vaultBalances[_uToken] > 0, "AuctionHandler: No vault balance to redeem from");
+    function burnAndRedeem(address _moonToken, uint256 _amount) public {
+        require(vaultBalances[_moonToken] > 0, "AuctionHandler: No vault balance to redeem from");
 
-        uint256 redeemAmount = _amount.mul(vaultBalances[_uToken]).div(IERC20Upgradeable(_uToken).totalSupply());
-        Converter(_uToken).burnFrom(msg.sender, _amount);
-        vaultBalances[_uToken] = vaultBalances[_uToken].sub(redeemAmount);
+        uint256 redeemAmount = _amount.mul(vaultBalances[_moonToken]).div(IERC20Upgradeable(_moonToken).totalSupply());
+        Converter(_moonToken).burnFrom(msg.sender, _amount);
+        vaultBalances[_moonToken] = vaultBalances[_moonToken].sub(redeemAmount);
 
-        // Redeem ETH corresponding to uToken amount
+        // Redeem ETH corresponding to moonToken amount
         (bool sent, bytes memory data) = msg.sender.call{value: redeemAmount}("");
         require(sent, "AuctionHandler: Failed to send Ether");
     }
@@ -229,7 +223,7 @@ contract AuctionHandler is Initializable, OwnableUpgradeable {
         return block.timestamp;
     }
 
-    function onAuction(address uToken, uint256 nftIndexForUToken) external view returns (bool) {
-        return auctionStarted[uToken][nftIndexForUToken];
+    function onAuction(address moonToken, uint256 nftIndexForMoonToken) external view returns (bool) {
+        return auctionStarted[moonToken][nftIndexForMoonToken];
     }
 }

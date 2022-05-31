@@ -1,0 +1,338 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <title>Code coverage report for contracts/UnicPumper.sol</title>
+    <meta charset="utf-8" />
+    <link rel="stylesheet" href="../prettify.css" />
+    <link rel="stylesheet" href="../base.css" />
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <style type='text/css'>
+        .coverage-summary .sorter {
+            background-image: url(../sort-arrow-sprite.png);
+        }
+    </style>
+</head>
+<body>
+<div class='wrapper'>
+  <div class='pad1'>
+    <h1>
+      <a href="../index.html">all files</a> / <a href="index.html">contracts/</a> UnicPumper.sol
+    </h1>
+    <div class='clearfix'>
+      <div class='fl pad1y space-right2'>
+        <span class="strong">0% </span>
+        <span class="quiet">Statements</span>
+        <span class='fraction'>0/39</span>
+      </div>
+      <div class='fl pad1y space-right2'>
+        <span class="strong">0% </span>
+        <span class="quiet">Branches</span>
+        <span class='fraction'>0/8</span>
+      </div>
+      <div class='fl pad1y space-right2'>
+        <span class="strong">0% </span>
+        <span class="quiet">Functions</span>
+        <span class='fraction'>0/5</span>
+      </div>
+      <div class='fl pad1y space-right2'>
+        <span class="strong">0% </span>
+        <span class="quiet">Lines</span>
+        <span class='fraction'>0/39</span>
+      </div>
+    </div>
+  </div>
+  <div class='status-line low'></div>
+<pre><table class="coverage">
+<tr><td class="line-count quiet">1
+2
+3
+4
+5
+6
+7
+8
+9
+10
+11
+12
+13
+14
+15
+16
+17
+18
+19
+20
+21
+22
+23
+24
+25
+26
+27
+28
+29
+30
+31
+32
+33
+34
+35
+36
+37
+38
+39
+40
+41
+42
+43
+44
+45
+46
+47
+48
+49
+50
+51
+52
+53
+54
+55
+56
+57
+58
+59
+60
+61
+62
+63
+64
+65
+66
+67
+68
+69
+70
+71
+72
+73
+74
+75
+76
+77
+78
+79
+80
+81
+82
+83
+84
+85
+86
+87
+88
+89
+90
+91
+92</td><td class="line-coverage quiet"><span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span></td><td class="text"><pre class="prettyprint lang-js">pragma solidity 0.6.12;
+&nbsp;
+import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import "@openzeppelin/contracts/token/ERC20/SafeERC20.sol";
+import "@openzeppelin/contracts/math/SafeMath.sol";
+import "./UnicSwap/interfaces/IUnicSwapV2Factory.sol";
+import "./UnicSwap/interfaces/IUnicSwapV2Pair.sol";
+&nbsp;
+// COPIED FROM: https://github.com/sushiswap/sushiswap/blob/master/contracts/SushiMaker.sol
+// Modified by 0xLeia
+// UnicPumper generates rewards for xUNIC holders by trading tokens collected from fees for UNIC
+&nbsp;
+contract UnicPumper {
+    using SafeMath for uint256;
+    using SafeERC20 for IERC20;
+&nbsp;
+    IUnicSwapV2Factory public factory;
+    address public bar;
+    address public unic;
+    address public weth;
+&nbsp;
+<span class="fstat-no" title="function not covered" >    constructor(IUnicSwapV2Factory _factory, address _bar, address _unic, address _weth) public {</span>
+<span class="cstat-no" title="statement not covered" >        factory = _factory</span>;
+<span class="cstat-no" title="statement not covered" >        unic = _unic</span>;
+<span class="cstat-no" title="statement not covered" >        bar = _bar</span>;
+<span class="cstat-no" title="statement not covered" >        weth = _weth</span>;
+    }
+&nbsp;
+<span class="fstat-no" title="function not covered" >    function convert(address token0, address token1) public {</span>
+        // At least we try to make front-running harder to do.
+<span class="cstat-no" title="statement not covered" >        require(msg.sender == tx.origin, "do not convert from contract")</span>;
+<span class="cstat-no" title="statement not covered" >        IUnicSwapV2Pair pair = IUnicSwapV2Pair(factory.getPair(token0, token1));</span>
+<span class="cstat-no" title="statement not covered" >        pair.transfer(address(pair), pair.balanceOf(address(this)))</span>;
+<span class="cstat-no" title="statement not covered" >        (uint amount0, uint amount1) = pair.burn(address(this));</span>
+        // First we convert everything to WETH
+<span class="cstat-no" title="statement not covered" >        uint256 wethAmount = _toWETH(token0, amount0) + _toWETH(token1, amount1);</span>
+        // Then we convert the WETH to Unic
+<span class="cstat-no" title="statement not covered" >        _toSUSHI(wethAmount)</span>;
+    }
+&nbsp;
+    // Converts token passed as an argument to WETH
+<span class="fstat-no" title="function not covered" >    function _toWETH(address token, uint amountIn) internal returns (uint256) {</span>
+        // If the passed token is Unic, don't convert anything
+<span class="cstat-no" title="statement not covered" >        if (token == unic) {</span>
+<span class="cstat-no" title="statement not covered" >            _safeTransfer(token, bar, amountIn)</span>;
+<span class="cstat-no" title="statement not covered" >            return 0;</span>
+        }
+        // If the passed token is WETH, don't convert anything
+<span class="cstat-no" title="statement not covered" >        if (token == weth) {</span>
+<span class="cstat-no" title="statement not covered" >            _safeTransfer(token, factory.getPair(weth, unic), amountIn)</span>;
+<span class="cstat-no" title="statement not covered" >            return amountIn;</span>
+        }
+        // If the target pair doesn't exist, don't convert anything
+<span class="cstat-no" title="statement not covered" >        IUnicSwapV2Pair pair = IUnicSwapV2Pair(factory.getPair(token, weth));</span>
+<span class="cstat-no" title="statement not covered" >        if (address(pair) == address(0)) {</span>
+<span class="cstat-no" title="statement not covered" >            return 0;</span>
+        }
+        // Choose the correct reserve to swap from
+<span class="cstat-no" title="statement not covered" >        (uint reserve0, uint reserve1,) = pair.getReserves();</span>
+<span class="cstat-no" title="statement not covered" >        address token0 = pair.token0();</span>
+<span class="cstat-no" title="statement not covered" >        (uint reserveIn, uint reserveOut) = token0 == token ? (reserve0, reserve1) : (reserve1, reserve0);</span>
+        // Calculate information required to swap
+<span class="cstat-no" title="statement not covered" >        uint amountInWithFee = amountIn.mul(997);</span>
+<span class="cstat-no" title="statement not covered" >        uint amountOut = amountInWithFee.mul(reserveOut) / reserveIn.mul(1000).add(amountInWithFee);</span>
+<span class="cstat-no" title="statement not covered" >        (uint amount0Out, uint amount1Out) = token0 == token ? (uint(0), amountOut) : (amountOut, uint(0));</span>
+<span class="cstat-no" title="statement not covered" >        _safeTransfer(token, address(pair), amountIn)</span>;
+<span class="cstat-no" title="statement not covered" >        pair.swap(amount0Out, amount1Out, factory.getPair(weth, unic), new bytes(0))</span>;
+<span class="cstat-no" title="statement not covered" >        return amountOut;</span>
+    }
+&nbsp;
+    // Converts WETH to Unic
+<span class="fstat-no" title="function not covered" >    function _toSUSHI(uint256 amountIn) internal {</span>
+<span class="cstat-no" title="statement not covered" >        IUnicSwapV2Pair pair = IUnicSwapV2Pair(factory.getPair(weth, unic));</span>
+        // Choose WETH as input token
+<span class="cstat-no" title="statement not covered" >        (uint reserve0, uint reserve1,) = pair.getReserves();</span>
+<span class="cstat-no" title="statement not covered" >        address token0 = pair.token0();</span>
+<span class="cstat-no" title="statement not covered" >        (uint reserveIn, uint reserveOut) = token0 == weth ? (reserve0, reserve1) : (reserve1, reserve0);</span>
+        // Calculate information required to swap
+<span class="cstat-no" title="statement not covered" >        uint amountInWithFee = amountIn.mul(997);</span>
+<span class="cstat-no" title="statement not covered" >        uint numerator = amountInWithFee.mul(reserveOut);</span>
+<span class="cstat-no" title="statement not covered" >        uint denominator = reserveIn.mul(1000).add(amountInWithFee);</span>
+<span class="cstat-no" title="statement not covered" >        uint amountOut = numerator / denominator;</span>
+<span class="cstat-no" title="statement not covered" >        (uint amount0Out, uint amount1Out) = token0 == weth ? (uint(0), amountOut) : (amountOut, uint(0));</span>
+        // Swap WETH for Unic
+<span class="cstat-no" title="statement not covered" >        pair.swap(amount0Out, amount1Out, bar, new bytes(0))</span>;
+    }
+&nbsp;
+    // Wrapper for safeTransfer
+<span class="fstat-no" title="function not covered" >    function _safeTransfer(address token, address to, uint256 amount) internal {</span>
+<span class="cstat-no" title="statement not covered" >        IERC20(token).safeTransfer(to, amount)</span>;
+    }
+}</pre></td></tr>
+</table></pre>
+<div class='push'></div><!-- for sticky footer -->
+</div><!-- /wrapper -->
+<div class='footer quiet pad2 space-top1 center small'>
+  Code coverage
+  generated by <a href="http://istanbul-js.org/" target="_blank">istanbul</a> at Thu May 27 2021 19:22:05 GMT-0400 (Eastern Daylight Time)
+</div>
+</div>
+<script src="../prettify.js"></script>
+<script>
+window.onload = function () {
+        if (typeof prettyPrint === 'function') {
+            prettyPrint();
+        }
+};
+</script>
+<script src="../sorter.js"></script>
+</body>
+</html>

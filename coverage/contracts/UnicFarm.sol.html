@@ -1,0 +1,956 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <title>Code coverage report for contracts/UnicFarm.sol</title>
+    <meta charset="utf-8" />
+    <link rel="stylesheet" href="../prettify.css" />
+    <link rel="stylesheet" href="../base.css" />
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <style type='text/css'>
+        .coverage-summary .sorter {
+            background-image: url(../sort-arrow-sprite.png);
+        }
+    </style>
+</head>
+<body>
+<div class='wrapper'>
+  <div class='pad1'>
+    <h1>
+      <a href="../index.html">all files</a> / <a href="index.html">contracts/</a> UnicFarm.sol
+    </h1>
+    <div class='clearfix'>
+      <div class='fl pad1y space-right2'>
+        <span class="strong">0% </span>
+        <span class="quiet">Statements</span>
+        <span class='fraction'>0/106</span>
+      </div>
+      <div class='fl pad1y space-right2'>
+        <span class="strong">0% </span>
+        <span class="quiet">Branches</span>
+        <span class='fraction'>0/46</span>
+      </div>
+      <div class='fl pad1y space-right2'>
+        <span class="strong">0% </span>
+        <span class="quiet">Functions</span>
+        <span class='fraction'>0/15</span>
+      </div>
+      <div class='fl pad1y space-right2'>
+        <span class="strong">0% </span>
+        <span class="quiet">Lines</span>
+        <span class='fraction'>0/107</span>
+      </div>
+    </div>
+  </div>
+  <div class='status-line low'></div>
+<pre><table class="coverage">
+<tr><td class="line-count quiet">1
+2
+3
+4
+5
+6
+7
+8
+9
+10
+11
+12
+13
+14
+15
+16
+17
+18
+19
+20
+21
+22
+23
+24
+25
+26
+27
+28
+29
+30
+31
+32
+33
+34
+35
+36
+37
+38
+39
+40
+41
+42
+43
+44
+45
+46
+47
+48
+49
+50
+51
+52
+53
+54
+55
+56
+57
+58
+59
+60
+61
+62
+63
+64
+65
+66
+67
+68
+69
+70
+71
+72
+73
+74
+75
+76
+77
+78
+79
+80
+81
+82
+83
+84
+85
+86
+87
+88
+89
+90
+91
+92
+93
+94
+95
+96
+97
+98
+99
+100
+101
+102
+103
+104
+105
+106
+107
+108
+109
+110
+111
+112
+113
+114
+115
+116
+117
+118
+119
+120
+121
+122
+123
+124
+125
+126
+127
+128
+129
+130
+131
+132
+133
+134
+135
+136
+137
+138
+139
+140
+141
+142
+143
+144
+145
+146
+147
+148
+149
+150
+151
+152
+153
+154
+155
+156
+157
+158
+159
+160
+161
+162
+163
+164
+165
+166
+167
+168
+169
+170
+171
+172
+173
+174
+175
+176
+177
+178
+179
+180
+181
+182
+183
+184
+185
+186
+187
+188
+189
+190
+191
+192
+193
+194
+195
+196
+197
+198
+199
+200
+201
+202
+203
+204
+205
+206
+207
+208
+209
+210
+211
+212
+213
+214
+215
+216
+217
+218
+219
+220
+221
+222
+223
+224
+225
+226
+227
+228
+229
+230
+231
+232
+233
+234
+235
+236
+237
+238
+239
+240
+241
+242
+243
+244
+245
+246
+247
+248
+249
+250
+251
+252
+253
+254
+255
+256
+257
+258
+259
+260
+261
+262
+263
+264
+265
+266
+267
+268
+269
+270
+271
+272
+273
+274
+275
+276
+277
+278
+279
+280
+281
+282
+283
+284
+285
+286
+287
+288
+289
+290
+291
+292
+293
+294
+295
+296
+297
+298</td><td class="line-coverage quiet"><span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span></td><td class="text"><pre class="prettyprint lang-js">pragma solidity 0.6.12;
+&nbsp;
+&nbsp;
+import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import "@openzeppelin/contracts/token/ERC20/SafeERC20.sol";
+import "@openzeppelin/contracts/utils/EnumerableSet.sol";
+import "@openzeppelin/contracts/math/SafeMath.sol";
+import "@openzeppelin/contracts/access/Ownable.sol";
+import "./Unic.sol";
+import "./Converter.sol";
+&nbsp;
+// Copied from https://github.com/sushiswap/sushiswap/blob/master/contracts/MasterChef.sol
+// Modified by 0xLeia
+&nbsp;
+// UnicFarm is where liquidity providers on UnicSwap can stake their LP tokens for UNIC rewards
+// The ownership of UnicFarm will be transferred to a governance smart contract once UNIC has been sufficiently distributed
+&nbsp;
+contract UnicFarm is Ownable {
+    using SafeMath for uint256;
+    using SafeERC20 for IERC20;
+&nbsp;
+    // Info of each user.
+    struct UserInfo {
+        uint256 amount;     // How many LP tokens the user has provided.
+        uint256 rewardDebt; // Reward debt. See explanation below.
+        //
+        // We do some fancy math here. Basically, any point in time, the amount of UNICs
+        // entitled to a user but is pending to be distributed is:
+        //
+        //   pending reward = (user.amount * pool.accUnicPerShare) - user.rewardDebt
+        //
+        // Whenever a user deposits or withdraws LP tokens to a pool. Here's what happens:
+        //   1. The pool's `accUnicPerShare` (and `lastRewardBlock`) gets updated.
+        //   2. User receives the pending reward sent to his/her address.
+        //   3. User's `amount` gets updated.
+        //   4. User's `rewardDebt` gets updated.
+    }
+&nbsp;
+    // Info of each pool.
+    struct PoolInfo {
+        IERC20 lpToken;           // Address of LP token contract.
+        uint256 allocPoint;       // How many allocation points assigned to this pool. UNICs to distribute per block.
+        uint256 lastRewardBlock;  // Last block number that UNICs distribution occurs.
+        uint256 accUnicPerShare; // Accumulated UNICs per share, times 1e12. See below.
+        address uToken;
+    }
+&nbsp;
+    // The UNIC TOKEN!
+    Unic public unic;
+    // Dev address.
+    address public devaddr;
+    // Mint rate controllers
+    uint256 public mintRateMultiplier;
+    uint256 public mintRateDivider;
+    // Blocks per tranche used to calculate current mint rate (6500 blocks per day * 30 = 195000)
+    uint256 public blocksPerTranche;
+    // Current tranche
+    uint256 public tranche = 0;
+    // Whitelist mapping of address to bool
+    mapping(address =&gt; bool) public whitelist;
+    // UNIC tokens created per block.
+    uint256 public unicPerBlock;
+&nbsp;
+    // Info of each pool.
+    PoolInfo[] public poolInfo;
+    // Info of each user that stakes LP tokens.
+    mapping (uint256 =&gt; mapping (address =&gt; UserInfo)) public userInfo;
+    // Total allocation points. Must be the sum of all allocation points in all pools.
+    uint256 public totalAllocPoint = 0;
+    // The block number when UNIC mining starts.
+    uint256 public startBlock;
+&nbsp;
+    event Deposit(address indexed user, uint256 indexed pid, uint256 amount);
+    event Withdraw(address indexed user, uint256 indexed pid, uint256 amount);
+    event EmergencyWithdraw(address indexed user, uint256 indexed pid, uint256 amount);
+&nbsp;
+    // New events so that the graph works
+    event Add(uint256 allocPoint, address lpToken, bool withUpdate);
+    event Set(uint256 pid, uint256 allocPoint, bool withUpdate);
+    event MassUpdatePools();
+    event UpdatePool(uint256 pid);
+    event Dev(address devaddr);
+&nbsp;
+<span class="fstat-no" title="function not covered" >    constructor(</span>
+        Unic _unic,
+        address _devaddr,
+        uint256 _mintRateMultiplier,
+        uint256 _mintRateDivider,
+        uint256 _unicPerBlock,
+        uint256 _startBlock,
+        uint256 _blocksPerTranche
+    ) public {
+<span class="cstat-no" title="statement not covered" >        unic = _unic</span>;
+<span class="cstat-no" title="statement not covered" >        devaddr = _devaddr</span>;
+<span class="cstat-no" title="statement not covered" >        mintRateMultiplier = _mintRateMultiplier</span>;
+<span class="cstat-no" title="statement not covered" >        mintRateDivider = _mintRateDivider</span>;
+<span class="cstat-no" title="statement not covered" >        unicPerBlock = _unicPerBlock</span>;
+<span class="cstat-no" title="statement not covered" >        startBlock = _startBlock</span>;
+<span class="cstat-no" title="statement not covered" >        blocksPerTranche = _blocksPerTranche</span>;
+    }
+&nbsp;
+<span class="fstat-no" title="function not covered" >    function poolLength() external view returns (uint256) {</span>
+<span class="cstat-no" title="statement not covered" >        return poolInfo.length;</span>
+    }
+&nbsp;
+    // Add a new lp to the pool. Can only be called by the owner.
+    // address(0) for uToken if there's no uToken involved. Input uToken address if there is.
+<span class="fstat-no" title="function not covered" >    function add(uint256 _allocPoint, IERC20 _lpToken, bool _withUpdate, address _uToken) public onlyOwner {</span>
+<span class="cstat-no" title="statement not covered" >        require(!whitelist[address(_lpToken)])</span>;
+<span class="cstat-no" title="statement not covered" >        if (_withUpdate) {</span>
+<span class="cstat-no" title="statement not covered" >            massUpdatePools()</span>;
+        }
+<span class="cstat-no" title="statement not covered" >        uint256 lastRewardBlock = block.number &gt; startBlock ? block.number : startBlock;</span>
+<span class="cstat-no" title="statement not covered" >        totalAllocPoint = totalAllocPoint.add(_allocPoint)</span>;
+<span class="cstat-no" title="statement not covered" >        poolInfo.push(PoolInfo({</span>
+            lpToken: _lpToken,
+            allocPoint: _allocPoint,
+            lastRewardBlock: lastRewardBlock,
+            accUnicPerShare: 0,
+            uToken: _uToken
+        }));
+&nbsp;
+<span class="cstat-no" title="statement not covered" >        whitelist[address(_lpToken)] = true</span>;
+&nbsp;
+<span class="cstat-no" title="statement not covered" >        emit Add(_allocPoint, address(_lpToken), _withUpdate);</span>
+    }
+&nbsp;
+    // Update the given pool's UNIC allocation point. Can only be called by the owner.
+<span class="fstat-no" title="function not covered" >    function set(uint256 _pid, uint256 _allocPoint, bool _withUpdate) public onlyOwner {</span>
+<span class="cstat-no" title="statement not covered" >        if (_withUpdate) {</span>
+<span class="cstat-no" title="statement not covered" >            massUpdatePools()</span>;
+        }
+<span class="cstat-no" title="statement not covered" >        totalAllocPoint = totalAllocPoint.sub(poolInfo[_pid].allocPoint).add(_allocPoint)</span>;
+<span class="cstat-no" title="statement not covered" >        poolInfo[_pid].allocPoint = _allocPoint</span>;
+&nbsp;
+<span class="cstat-no" title="statement not covered" >        emit Set(_pid, _allocPoint, _withUpdate);</span>
+    }
+&nbsp;
+    // Return rewards over the given _from to _to block.
+    // Rewards accumulate for a maximum of 195000 blocks.
+    // from 12383856
+    // to 12430340
+<span class="fstat-no" title="function not covered" >    function getRewards(uint256 _from, uint256 _to) public view returns (uint256) {</span>
+        // 12583856
+<span class="cstat-no" title="statement not covered" >        uint256 lastTrancheBlock = startBlock.add(tranche.mul(blocksPerTranche));</span>
+        // 12430340 - 12383856 &gt; 195330 --&gt; false
+<span class="cstat-no" title="statement not covered" >        if (_to.sub(_from) &gt; blocksPerTranche) {</span>
+<span class="cstat-no" title="statement not covered" >            _from = _to.sub(blocksPerTranche)</span>;
+        }
+        // 12383856 &gt; 12583856 --&gt; false
+<span class="cstat-no" title="statement not covered" >        if (_from &gt; lastTrancheBlock) {</span>
+<span class="cstat-no" title="statement not covered" >            return _to.sub(_from).mul(unicPerBlock);</span>
+        } else {
+            // Use prior mint rate for blocks staked before last tranche block
+<span class="cstat-no" title="statement not covered" >            return lastTrancheBlock.sub(_from).mul(unicPerBlock).mul(mintRateDivider).div(mintRateMultiplier).add(</span>
+                _to.sub(lastTrancheBlock).mul(unicPerBlock)
+            );
+        }
+    }
+&nbsp;
+    // View function to see pending UNICs on frontend.
+<span class="fstat-no" title="function not covered" >    function pendingUnic(uint256 _pid, address _user) external view returns (uint256) {</span>
+<span class="cstat-no" title="statement not covered" >        PoolInfo storage pool = poolInfo[_pid];</span>
+<span class="cstat-no" title="statement not covered" >        UserInfo storage user = userInfo[_pid][_user];</span>
+<span class="cstat-no" title="statement not covered" >        uint256 accUnicPerShare = pool.accUnicPerShare;</span>
+<span class="cstat-no" title="statement not covered" >        uint256 lpSupply = pool.lpToken.balanceOf(address(this));</span>
+<span class="cstat-no" title="statement not covered" >        if (block.number &gt; pool.lastRewardBlock &amp;&amp; lpSupply != 0) {</span>
+<span class="cstat-no" title="statement not covered" >            uint256 unicReward = getRewards(pool.lastRewardBlock, block.number).mul(pool.allocPoint).div(totalAllocPoint);</span>
+<span class="cstat-no" title="statement not covered" >            accUnicPerShare = accUnicPerShare.add(unicReward.mul(1e12).div(lpSupply))</span>;
+        }
+<span class="cstat-no" title="statement not covered" >        return user.amount.mul(accUnicPerShare).div(1e12).sub(user.rewardDebt);</span>
+    }
+&nbsp;
+    // Update reward variables for all pools. Be careful of gas spending!
+<span class="fstat-no" title="function not covered" >    function massUpdatePools() public {</span>
+<span class="cstat-no" title="statement not covered" >        uint256 length = poolInfo.length;</span>
+<span class="cstat-no" title="statement not covered" >        for (uint256 pid = 0; pid &lt; length; ++pid) {</span>
+<span class="cstat-no" title="statement not covered" >            updatePool(pid)</span>;
+        }
+&nbsp;
+<span class="cstat-no" title="statement not covered" >        emit MassUpdatePools();</span>
+    }
+&nbsp;
+    // Update reward variables of the given pool to be up-to-date.
+<span class="fstat-no" title="function not covered" >    function updatePool(uint256 _pid) public {</span>
+<span class="cstat-no" title="statement not covered" >        PoolInfo storage pool = poolInfo[_pid];</span>
+<span class="cstat-no" title="statement not covered" >        if (pool.uToken != address(0) &amp;&amp; pool.allocPoint &gt; 0) {</span>
+<span class="cstat-no" title="statement not covered" >            if (Converter(pool.uToken).unlockVotes() &gt;= Converter(pool.uToken)._threshold()) {</span>
+<span class="cstat-no" title="statement not covered" >                totalAllocPoint = totalAllocPoint.sub(pool.allocPoint)</span>;
+<span class="cstat-no" title="statement not covered" >                pool.allocPoint = 0</span>;
+<span class="cstat-no" title="statement not covered" >                emit Set(_pid, 0, false);</span>
+            }
+        }
+<span class="cstat-no" title="statement not covered" >        if (block.number &lt;= pool.lastRewardBlock) {</span>
+<span class="cstat-no" title="statement not covered" >            return;</span>
+        }
+<span class="cstat-no" title="statement not covered" >        uint256 lpSupply = pool.lpToken.balanceOf(address(this));</span>
+<span class="cstat-no" title="statement not covered" >        if (lpSupply == 0) {</span>
+<span class="cstat-no" title="statement not covered" >            pool.lastRewardBlock = block.number</span>;
+<span class="cstat-no" title="statement not covered" >            return;</span>
+        }
+        // Update block rewards and tranche based on block height
+<span class="cstat-no" title="statement not covered" >        if (block.number &gt;= startBlock.add(tranche.mul(blocksPerTranche)).add(blocksPerTranche)) {</span>
+            tranche++;
+<span class="cstat-no" title="statement not covered" >            unicPerBlock = unicPerBlock.mul(mintRateMultiplier).div(mintRateDivider)</span>;
+        }
+<span class="cstat-no" title="statement not covered" >        uint256 unicReward = getRewards(pool.lastRewardBlock, block.number).mul(pool.allocPoint).div(totalAllocPoint);</span>
+<span class="cstat-no" title="statement not covered" >        unic.mint(devaddr, unicReward.div(9))</span>;
+<span class="cstat-no" title="statement not covered" >        unic.mint(address(this), unicReward)</span>;
+<span class="cstat-no" title="statement not covered" >        pool.accUnicPerShare = pool.accUnicPerShare.add(unicReward.mul(1e12).div(lpSupply))</span>;
+<span class="cstat-no" title="statement not covered" >        pool.lastRewardBlock = block.number</span>;
+&nbsp;
+<span class="cstat-no" title="statement not covered" >        emit UpdatePool(_pid);</span>
+    }
+&nbsp;
+    // Deposit LP tokens to UnicFarm for UNIC allocation.
+<span class="fstat-no" title="function not covered" >    function deposit(uint256 _pid, uint256 _amount) public {</span>
+<span class="cstat-no" title="statement not covered" >        PoolInfo storage pool = poolInfo[_pid];</span>
+<span class="cstat-no" title="statement not covered" >        UserInfo storage user = userInfo[_pid][msg.sender];</span>
+<span class="cstat-no" title="statement not covered" >        updatePool(_pid)</span>;
+<span class="cstat-no" title="statement not covered" >        if (user.amount &gt; 0) {</span>
+<span class="cstat-no" title="statement not covered" >            uint256 pending = user.amount.mul(pool.accUnicPerShare).div(1e12).sub(user.rewardDebt);</span>
+<span class="cstat-no" title="statement not covered" >            if(pending &gt; 0) {</span>
+<span class="cstat-no" title="statement not covered" >                safeUnicTransfer(msg.sender, pending)</span>;
+            }
+        }
+<span class="cstat-no" title="statement not covered" >        if(_amount &gt; 0) {</span>
+<span class="cstat-no" title="statement not covered" >            pool.lpToken.safeTransferFrom(address(msg.sender), address(this), _amount)</span>;
+<span class="cstat-no" title="statement not covered" >            user.amount = user.amount.add(_amount)</span>;
+        }
+<span class="cstat-no" title="statement not covered" >        user.rewardDebt = user.amount.mul(pool.accUnicPerShare).div(1e12)</span>;
+<span class="cstat-no" title="statement not covered" >        emit Deposit(msg.sender, _pid, _amount);</span>
+    }
+&nbsp;
+    // Withdraw LP tokens from UnicFarm.
+<span class="fstat-no" title="function not covered" >    function withdraw(uint256 _pid, uint256 _amount) public {</span>
+<span class="cstat-no" title="statement not covered" >        PoolInfo storage pool = poolInfo[_pid];</span>
+<span class="cstat-no" title="statement not covered" >        UserInfo storage user = userInfo[_pid][msg.sender];</span>
+<span class="cstat-no" title="statement not covered" >        require(user.amount &gt;= _amount, "withdraw: not good")</span>;
+<span class="cstat-no" title="statement not covered" >        updatePool(_pid)</span>;
+<span class="cstat-no" title="statement not covered" >        uint256 pending = user.amount.mul(pool.accUnicPerShare).div(1e12).sub(user.rewardDebt);</span>
+<span class="cstat-no" title="statement not covered" >        if(pending &gt; 0) {</span>
+<span class="cstat-no" title="statement not covered" >            safeUnicTransfer(msg.sender, pending)</span>;
+        }
+<span class="cstat-no" title="statement not covered" >        if(_amount &gt; 0) {</span>
+<span class="cstat-no" title="statement not covered" >            user.amount = user.amount.sub(_amount)</span>;
+<span class="cstat-no" title="statement not covered" >            pool.lpToken.safeTransfer(address(msg.sender), _amount)</span>;
+        }
+<span class="cstat-no" title="statement not covered" >        user.rewardDebt = user.amount.mul(pool.accUnicPerShare).div(1e12)</span>;
+<span class="cstat-no" title="statement not covered" >        emit Withdraw(msg.sender, _pid, _amount);</span>
+    }
+&nbsp;
+    // Withdraw without caring about rewards. EMERGENCY ONLY.
+<span class="fstat-no" title="function not covered" >    function emergencyWithdraw(uint256 _pid) public {</span>
+<span class="cstat-no" title="statement not covered" >        PoolInfo storage pool = poolInfo[_pid];</span>
+<span class="cstat-no" title="statement not covered" >        UserInfo storage user = userInfo[_pid][msg.sender];</span>
+<span class="cstat-no" title="statement not covered" >        uint256 amount = user.amount;</span>
+<span class="cstat-no" title="statement not covered" >        user.amount = 0</span>;
+<span class="cstat-no" title="statement not covered" >        user.rewardDebt = 0</span>;
+<span class="cstat-no" title="statement not covered" >        pool.lpToken.safeTransfer(address(msg.sender), amount)</span>;
+<span class="cstat-no" title="statement not covered" >        emit EmergencyWithdraw(msg.sender, _pid, amount);</span>
+    }
+&nbsp;
+    // Safe unic transfer function, just in case if rounding error causes pool to not have enough UNICs.
+<span class="fstat-no" title="function not covered" >    function safeUnicTransfer(address _to, uint256 _amount) internal {</span>
+<span class="cstat-no" title="statement not covered" >        uint256 unicBal = unic.balanceOf(address(this));</span>
+<span class="cstat-no" title="statement not covered" >        if (_amount &gt; unicBal) {</span>
+<span class="cstat-no" title="statement not covered" >            unic.transfer(_to, unicBal)</span>;
+        } else {
+<span class="cstat-no" title="statement not covered" >            unic.transfer(_to, _amount)</span>;
+        }
+    }
+&nbsp;
+    // Update dev address by the previous dev.
+<span class="fstat-no" title="function not covered" >    function dev(address _devaddr) public {</span>
+<span class="cstat-no" title="statement not covered" >        require(msg.sender == devaddr, "dev: wut?")</span>;
+<span class="cstat-no" title="statement not covered" >        devaddr = _devaddr</span>;
+&nbsp;
+<span class="cstat-no" title="statement not covered" >        emit Dev(_devaddr);</span>
+    }
+&nbsp;
+    // Set mint rate
+<span class="fstat-no" title="function not covered" >    function setMintRules(uint256 _mintRateMultiplier, uint256 _mintRateDivider, uint256 _unicPerBlock, uint256 _blocksPerTranche) public onlyOwner {</span>
+<span class="cstat-no" title="statement not covered" >        require(_mintRateDivider &gt; 0, "no dividing by zero")</span>;
+<span class="cstat-no" title="statement not covered" >        require(_blocksPerTranche &gt; 0, "zero blocks per tranche not allowed")</span>;
+<span class="cstat-no" title="statement not covered" >        mintRateMultiplier = _mintRateMultiplier</span>;
+<span class="cstat-no" title="statement not covered" >        mintRateDivider = _mintRateDivider</span>;
+<span class="cstat-no" title="statement not covered" >        unicPerBlock = _unicPerBlock</span>;
+<span class="cstat-no" title="statement not covered" >        blocksPerTranche = _blocksPerTranche</span>;
+    }
+&nbsp;
+<span class="fstat-no" title="function not covered" >    function setStartBlock(uint256 _startBlock) public onlyOwner {</span>
+<span class="cstat-no" title="statement not covered" >        require(block.number &lt; startBlock, "start block can not be modified after it has passed")</span>;
+<span class="cstat-no" title="statement not covered" >        require(block.number &lt; _startBlock, "new start block needs to be in the future")</span>;
+<span class="cstat-no" title="statement not covered" >        startBlock = _startBlock</span>;
+    }
+}
+&nbsp;</pre></td></tr>
+</table></pre>
+<div class='push'></div><!-- for sticky footer -->
+</div><!-- /wrapper -->
+<div class='footer quiet pad2 space-top1 center small'>
+  Code coverage
+  generated by <a href="http://istanbul-js.org/" target="_blank">istanbul</a> at Thu May 27 2021 19:22:05 GMT-0400 (Eastern Daylight Time)
+</div>
+</div>
+<script src="../prettify.js"></script>
+<script>
+window.onload = function () {
+        if (typeof prettyPrint === 'function') {
+            prettyPrint();
+        }
+};
+</script>
+<script src="../sorter.js"></script>
+</body>
+</html>

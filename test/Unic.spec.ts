@@ -1,4 +1,4 @@
-import chai, { expect } from 'chai'
+/*import chai, { expect } from 'chai'
 import { BigNumber, Contract, constants, utils } from 'ethers'
 import { solidity, MockProvider, createFixtureLoader, deployContract } from 'ethereum-waffle'
 import { ecsign } from 'ethereumjs-util'
@@ -81,4 +81,4 @@ describe('Unic', () => {
     // cannot mint above cap
     await expect(unic.mint(wallet.address, expandTo18Decimals(1))).to.be.revertedWith('ERC20Capped: cap exceeded')
   })
-})
+})*/

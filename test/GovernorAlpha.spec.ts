@@ -1,4 +1,4 @@
-import chai, { expect } from 'chai'
+/*import chai, { expect } from 'chai'
 import { Contract, constants } from 'ethers'
 import { solidity, MockProvider, createFixtureLoader } from 'ethereum-waffle'
 
@@ -51,4 +51,4 @@ describe('GovernorAlpha', () => {
     const unicFromGovernor = await governorAlpha.unic()
     expect(unicFromGovernor).to.be.eq(unic.address)
   })
-})
+})*/

@@ -6,8 +6,11 @@ import { expandTo18Decimals, mineBlock, mineBlocks } from './utils'
 
 import UnicFactory from '../build/UnicFactory.json'
 import Converter from '../build/Converter.json'
+import ProxyCreator from '../build/ProxyCreator.json'
 import MockERC721 from '../build/MockERC721.json'
 import MockERC1155 from '../build/MockERC1155.json'
+import MockERC20 from '../build/MockERC20.json'
+import AuctionHandler from '../build/AuctionHandler.json'
 
 chai.use(solidity)
 
@@ -26,27 +29,40 @@ describe('Converter', () => {
         gasLimit: 99999999,
       },
     })
-    const [alice, bob, carol, minter] = provider.getWallets()
+    const [alice, bob, carol, minter, fees] = provider.getWallets()
   
     let factory: Contract
     let converter: Contract
     let converter2: Contract
+    let converter3: Contract
     let nft1: Contract
     let nft2: Contract
+    let proxyCreator: Contract
+    let unic: Contract
+    let converterImpl: Contract
+    let auctionHandler: Contract
   
     beforeEach(async () => {
-  
-      factory = await deployContract(alice, UnicFactory, [alice.address], overrides)
-      await factory.connect(bob).createUToken(1000, 18, 'Star Wars Collection', 'uSTAR', 950, 'Leia\'s Star Wars NFT Collection')
+      unic = await deployContract(alice, MockERC20, ['UNIC', 'UNIC', '1000000000000000000000000'], overrides);
+      converterImpl = await deployContract(alice, Converter, [], overrides);
+      factory = await deployContract(alice, UnicFactory, [], overrides);
+      await unic.connect(alice).transfer(factory.address, '1000000000000000000000000')
+      await factory.connect(alice).initialize(alice.address, 100, 1000, unic.address, constants.AddressZero);
+      await factory.connect(alice).setConverterImplementation(converterImpl.address);
+      await factory.connect(bob).createUToken('Star Wars Collection', 'uSTAR', false, overrides)
+      auctionHandler = await deployContract(alice, AuctionHandler, [], overrides)
+      await auctionHandler.connect(alice).initialize(factory.address, 10, 105, 2, 100, fees.address, fees.address)
       const converterAddress = await factory.uTokens(0)
       converter = new Contract(converterAddress, JSON.stringify(Converter.abi), provider)
 
-      await factory.connect(carol).createUToken(1000, 8, 'Unicly NFT Collection', 'uNIC', 950, 'Leia\'s Unicly NFT Collection')
+      await factory.connect(carol).createUToken('Leia Collection', 'uLEIA', false, overrides)
       const converter2Address = await factory.uTokens(1)
       converter2 = new Contract(converter2Address, JSON.stringify(Converter.abi), provider)
 
       nft1 = await deployContract(minter, MockERC721, ['Star Wars NFTs', 'STAR'], overrides)
       nft2 = await deployContract(minter, MockERC1155, [], overrides)
+
+      await factory.connect(alice).setAirdropCollections([nft1.address, nft2.address], true)
       
       // 3 NFTs for Bob
       await nft1.connect(minter).mint(bob.address, 0)
@@ -69,6 +85,9 @@ describe('Converter', () => {
 
       await nft1.connect(carol).setApprovalForAll(converter2.address, true)
       await nft2.connect(carol).setApprovalForAll(converter2.address, true)
+
+      await factory.connect(alice).setAuctionHandler(auctionHandler.address)
+      await factory.connect(alice).toggleAirdrop()
     })
   
     it('state variables', async () => {
@@ -77,18 +96,14 @@ describe('Converter', () => {
         expect(await converter.decimals()).to.be.eq(18)
         expect(await converter.name()).to.be.eq('Star Wars Collection')
         expect(await converter.symbol()).to.be.eq('uSTAR')
-        expect(await converter._threshold()).to.be.eq(950)
         expect(await converter.issuer()).to.be.eq(bob.address)
-        expect(await converter._description()).to.be.eq('Leia\'s Star Wars NFT Collection')
         expect(await converter.factory()).to.be.eq(factory.address)
 
         expect(await converter2.totalSupply()).to.be.eq(0)
-        expect(await converter2.decimals()).to.be.eq(8)
-        expect(await converter2.name()).to.be.eq('Unicly NFT Collection')
-        expect(await converter2.symbol()).to.be.eq('uNIC')
-        expect(await converter2._threshold()).to.be.eq(950)
+        expect(await converter2.decimals()).to.be.eq(18)
+        expect(await converter2.name()).to.be.eq('Leia Collection')
+        expect(await converter2.symbol()).to.be.eq('uLEIA')
         expect(await converter2.issuer()).to.be.eq(carol.address)
-        expect(await converter2._description()).to.be.eq('Leia\'s Unicly NFT Collection')
         expect(await converter.factory()).to.be.eq(factory.address)
     })
 
@@ -113,12 +128,12 @@ describe('Converter', () => {
       await factory.connect(alice).setFeeTo(alice.address)
 
       await converter.connect(bob).issue()
-      expect(await converter.balanceOf(alice.address)).to.be.eq(5)
-      expect(await converter.balanceOf(bob.address)).to.be.eq(995)
+      expect(await converter.balanceOf(alice.address)).to.be.eq(10)
+      expect(await converter.balanceOf(bob.address)).to.be.eq(990)
 
       await converter2.connect(carol).issue()
-      expect(await converter2.balanceOf(alice.address)).to.be.eq(5)
-      expect(await converter2.balanceOf(carol.address)).to.be.eq(995)
+      expect(await converter2.balanceOf(alice.address)).to.be.eq(10)
+      expect(await converter2.balanceOf(carol.address)).to.be.eq(990)
     })
 
     it('deposit', async () => {
@@ -133,8 +148,10 @@ describe('Converter', () => {
 
       let bobTokenIds: Array<number>
       bobTokenIds = [0, 1, 2]
+      let triggerPrices: Array<number>
+      triggerPrices = [300, 500, 1000]
       await mineBlock(provider, (await provider.getBlock('latest')).timestamp + 1)
-      await converter.connect(bob).deposit(bobTokenIds, emptyArray, nft1.address)
+      await converter.connect(bob).deposit(bobTokenIds, emptyArray, triggerPrices, nft1.address)
       expect(await converter.currentNFTIndex()).to.be.eq(3)
       await mineBlock(provider, (await provider.getBlock('latest')).timestamp + 1)
 
@@ -142,7 +159,9 @@ describe('Converter', () => {
 
       let ERC1155Amounts: Array<number>
       ERC1155Amounts = [2, 1]
-      await converter.connect(bob).deposit(bobTokenIds, ERC1155Amounts, nft2.address)
+      let triggerPrices2: Array<number>
+      triggerPrices2 = [100, 200]
+      await converter.connect(bob).deposit(bobTokenIds, ERC1155Amounts, triggerPrices2, nft2.address)
       expect(await converter.currentNFTIndex()).to.be.eq(5)
       await mineBlock(provider, (await provider.getBlock('latest')).timestamp + 1)
 
@@ -159,29 +178,39 @@ describe('Converter', () => {
       expect((await converter.nfts(3)).tokenId).to.be.eq(0)
       // 4th token is ERC1155 and we sent 2 of them
       expect((await converter.nfts(3)).amount).to.be.eq(2)
+      // 4th token has trigger price of 100
+      expect((await converter.nfts(3)).triggerPrice).to.be.eq(100)
 
       // Check that it works for other people and other NFTs too
       let carolTokenIds: Array<number>
       carolTokenIds = [3, 4, 5]
-      await converter2.connect(carol).deposit(carolTokenIds, emptyArray, nft1.address)
+      let triggerPrices3: Array<number>
+      triggerPrices3 = [2000, 3000, 5000]
+      await converter2.connect(carol).deposit(carolTokenIds, emptyArray, triggerPrices3, nft1.address)
       await mineBlock(provider, (await provider.getBlock('latest')).timestamp + 1)
       carolTokenIds = [2, 3]
-      await converter2.connect(carol).deposit(carolTokenIds, ERC1155Amounts, nft2.address)
+      let triggerPrices4: Array<number>
+      triggerPrices4 = [10000, 20000]
+      await converter2.connect(carol).deposit(carolTokenIds, ERC1155Amounts, triggerPrices4, nft2.address)
       expect(await converter2.currentNFTIndex()).to.be.eq(5)
     })
 
     it('refund', async () => {
       let bobTokenIds: Array<number>
       bobTokenIds = [0, 1, 2]
+      let triggerPrices: Array<number>
+      triggerPrices = [300, 500, 1000]
       await mineBlock(provider, (await provider.getBlock('latest')).timestamp + 1)
-      await converter.connect(bob).deposit(bobTokenIds, emptyArray, nft1.address)
+      await converter.connect(bob).deposit(bobTokenIds, emptyArray, triggerPrices, nft1.address)
       expect(await converter.currentNFTIndex()).to.be.eq(3)
       await mineBlock(provider, (await provider.getBlock('latest')).timestamp + 1)
 
       bobTokenIds = [0, 1]
       let ERC1155Amounts: Array<number>
       ERC1155Amounts = [2, 1]
-      await converter.connect(bob).deposit(bobTokenIds, ERC1155Amounts, nft2.address)
+      let triggerPrices2: Array<number>
+      triggerPrices2 = [300, 500]
+      await converter.connect(bob).deposit(bobTokenIds, ERC1155Amounts, triggerPrices2, nft2.address)
       expect(await converter.currentNFTIndex()).to.be.eq(5)
       await mineBlock(provider, (await provider.getBlock('latest')).timestamp + 1)
 
@@ -207,20 +236,26 @@ describe('Converter', () => {
     it('deposit after issue', async () => {
       let bobTokenIds: Array<number>
       bobTokenIds = [0, 1, 2]
+      let triggerPrices: Array<number>
+      triggerPrices = [300, 500, 1000]
       await mineBlock(provider, (await provider.getBlock('latest')).timestamp + 1)
-      await converter.connect(bob).deposit(bobTokenIds, emptyArray, nft1.address)
+      await converter.connect(bob).deposit(bobTokenIds, emptyArray, triggerPrices, nft1.address)
       await mineBlock(provider, (await provider.getBlock('latest')).timestamp + 1)
 
       let carolTokenIds: Array<number>
       carolTokenIds = [3, 4, 5]
-      await expect(converter.connect(carol).deposit(carolTokenIds, emptyArray, nft1.address)).to.be.revertedWith('Converter: Only issuer can deposit')
+      await expect(converter.connect(carol).deposit(carolTokenIds, emptyArray, triggerPrices, nft1.address)).to.be.revertedWith('Converter: Only issuer can deposit')
 
+      expect(await unic.balanceOf(bob.address)).to.be.eq(0)
       await converter.connect(bob).issue()
+      expect(await unic.balanceOf(bob.address)).to.be.eq('100000000000000000000')
       bobTokenIds = [0, 1]
 
       let ERC1155Amounts: Array<number>
       ERC1155Amounts = [2, 1]
-      await converter.connect(bob).deposit(bobTokenIds, ERC1155Amounts, nft2.address)
+      let triggerPrices2: Array<number>
+      triggerPrices2 = [300, 500]
+      await converter.connect(bob).deposit(bobTokenIds, ERC1155Amounts, triggerPrices2, nft2.address)
       expect(await converter.currentNFTIndex()).to.be.eq(5)
       // 1st token is token ID 0 for nft1
       expect((await converter.nfts(0)).tokenId).to.be.eq(0)
@@ -230,184 +265,45 @@ describe('Converter', () => {
       expect((await converter.nfts(3)).amount).to.be.eq(2)
     })
 
-    it('total bid amount', async () => {
-      let bobTokenIds: Array<number>
-      bobTokenIds = [0, 1, 2]
-      await mineBlock(provider, (await provider.getBlock('latest')).timestamp + 1)
-      await converter.connect(bob).deposit(bobTokenIds, emptyArray, nft1.address)
-      await mineBlock(provider, (await provider.getBlock('latest')).timestamp + 1)
-
+    it('set vault creator', async () => {
+      expect(await converter.issuer()).to.be.eq(bob.address)
+      await expect(converter.connect(carol).setCurator(alice.address)).to.be.revertedWith('Converter: Tokens have not been issued yet')
       await converter.connect(bob).issue()
-
-      await converter.connect(bob).transfer(alice.address, 100)
-      await converter.connect(bob).transfer(carol.address, 100)
-
-      await converter.connect(bob).bid(0, { value: 50 })
-      expect(await converter.totalBidAmount()).to.be.eq(50)
-      await mineBlock(provider, (await provider.getBlock('latest')).timestamp + 1)
-
-      await converter.connect(carol).bid(0, { value: 100 })
-      expect(await converter.totalBidAmount()).to.be.eq(100)
-      await mineBlock(provider, (await provider.getBlock('latest')).timestamp + 1)
-
-      await converter.connect(bob).bid(1, { value: 25 })
-      expect(await converter.totalBidAmount()).to.be.eq(125)
-      await mineBlock(provider, (await provider.getBlock('latest')).timestamp + 1)
-
-      await expect(converter.connect(alice).bid(0, { value: 100 })).to.be.revertedWith('Converter: Bid too low')
-      await expect(converter.connect(carol).bid(0, { value: 125 })).to.be.revertedWith('Converter: You have an active bid')
-      await expect(converter.connect(bob).bid(0, { value: 125 })).to.be.revertedWith('Converter: Collect bid refund')
-
-      await expect(converter.connect(carol).unbid(0)).to.be.revertedWith('Converter: Top bid locked')
-      await expect(converter.connect(alice).unbid(0)).to.be.revertedWith('Converter: no bid found')
-
-      await converter.connect(bob).unbid(0)
-      expect(await converter.totalBidAmount()).to.be.eq(125)
-
-      await mineBlock(provider, (await provider.getBlock('latest')).timestamp + ((await converter.TOP_BID_LOCK_TIME()).toNumber() + 1))
-      await converter.connect(carol).unbid(0)
-      expect(await converter.totalBidAmount()).to.be.eq(25)
+      await expect(converter.connect(carol).setCurator(alice.address)).to.be.revertedWith('Converter: Not vault manager or issuer')
+      await converter.connect(bob).setCurator(carol.address)
+      expect(await converter.issuer()).to.be.eq(carol.address)
+      await converter.connect(alice).setCurator(alice.address)
+      expect(await converter.issuer()).to.be.eq(alice.address)
     })
 
-    it('bid, unbid, and ETH balance changes correctly', async () => {
+    it('set triggers', async () => {
       let bobTokenIds: Array<number>
       bobTokenIds = [0, 1, 2]
+      let triggerPrices: Array<number>
+      triggerPrices = [300, 500, 1000]
       await mineBlock(provider, (await provider.getBlock('latest')).timestamp + 1)
-      await converter.connect(bob).deposit(bobTokenIds, emptyArray, nft1.address)
+      await converter.connect(bob).deposit(bobTokenIds, emptyArray, triggerPrices, nft1.address)
       await mineBlock(provider, (await provider.getBlock('latest')).timestamp + 1)
 
-      await converter.connect(bob).issue()
-
-      await expect(await converter.connect(bob).bid(0, { value: 100 })).to.changeEtherBalance(bob, -100)
-      await mineBlock(provider, (await provider.getBlock('latest')).timestamp + 1)
-      await expect(await converter.connect(bob).bid(1, { value: 50 })).to.changeEtherBalance(bob, -50)
-      expect((await converter.bids(0))[0]).to.be.eq(bob.address)
-      expect((await converter.bids(0))[1]).to.be.eq(100)
-      expect((await converter.bids(1))[0]).to.be.eq(bob.address)
-      expect((await converter.bids(1))[1]).to.be.eq(50)
-      await mineBlock(provider, (await provider.getBlock('latest')).timestamp + 1)
-      await expect(await converter.connect(alice).bid(0, { value: 101 })).to.changeEtherBalance(alice, -101)
-      await mineBlock(provider, (await provider.getBlock('latest')).timestamp + 1)
-      await expect(await converter.connect(alice).bid(1, { value: 51 })).to.changeEtherBalance(alice, -51)
-      expect(await converter.bidRefunds(0, bob.address)).to.be.eq(100)
-      expect(await converter.bidRefunds(1, bob.address)).to.be.eq(50)
-      await mineBlock(provider, (await provider.getBlock('latest')).timestamp + ((await converter.TOP_BID_LOCK_TIME()).toNumber() + 1))
-      
-      await expect(await converter.connect(bob).unbid(0)).to.changeEtherBalance(bob, 100)
-      await expect(converter.connect(bob).unbid(0)).to.be.revertedWith('Converter: no bid found')
-      await mineBlock(provider, (await provider.getBlock('latest')).timestamp + 1)
-      await expect(await converter.connect(alice).unbid(0)).to.changeEtherBalance(alice, 101)
-      await expect(converter.connect(alice).unbid(0)).to.be.revertedWith('Converter: no bid found')
-
-      expect((await converter.bids(0))[1]).to.be.eq(0)
-      expect(await converter.bidRefunds(0, bob.address)).to.be.eq(0)
+      let triggerPrices2: Array<number> = [100, 200, 300]
+      await expect(converter.connect(carol).setTriggers(bobTokenIds, triggerPrices2)).to.be.revertedWith('Converter: Only issuer can set trigger prices')
+      await converter.connect(bob).setTriggers(bobTokenIds, triggerPrices2)
+      expect((await converter.nfts(0)).triggerPrice).to.be.eq(100)
+      expect((await converter.nfts(1)).triggerPrice).to.be.eq(200)
+      expect((await converter.nfts(2)).triggerPrice).to.be.eq(300)
     })
 
-    it('approve and unapprove unlock', async () => {
-      let bobTokenIds: Array<number>
-      bobTokenIds = [0, 1, 2]
-      await mineBlock(provider, (await provider.getBlock('latest')).timestamp + 1)
-      await converter.connect(bob).deposit(bobTokenIds, emptyArray, nft1.address)
-      await mineBlock(provider, (await provider.getBlock('latest')).timestamp + 1)
-
-      await converter.connect(bob).issue()
-
-      await converter.connect(bob).transfer(alice.address, 100)
-      await converter.connect(bob).transfer(carol.address, 100)
-
-      await converter.connect(bob).bid(0, { value: 50 })
-      await expect(converter.connect(alice).approveUnlock(120)).to.be.revertedWith('ERC20: transfer amount exceeds balance')
-      await converter.connect(alice).approveUnlock(30)
-      expect(await converter.unlockApproved(alice.address)).to.be.eq(30)
-      expect(await converter.unlockVotes()).to.be.eq(30)
-      expect(await converter.balanceOf(alice.address)).to.be.eq(70)
-      await converter.connect(alice).approveUnlock(70)
-      expect(await converter.unlockApproved(alice.address)).to.be.eq(100)
-      expect(await converter.unlockVotes()).to.be.eq(100)
-      expect(await converter.balanceOf(alice.address)).to.be.eq(0)
-      expect(await converter.balanceOf(converter.address)).to.be.eq(100)
-      await converter.connect(carol).approveUnlock(50)
-      expect(await converter.unlockApproved(carol.address)).to.be.eq(50)
-      expect(await converter.unlockVotes()).to.be.eq(150)
-
-      await expect(converter.connect(alice).unapproveUnlock(120)).to.be.revertedWith('Converter: Not enough uTokens locked by user')
-      await converter.connect(alice).unapproveUnlock(70)
-      expect(await converter.balanceOf(alice.address)).to.be.eq(70)
-      expect(await converter.balanceOf(converter.address)).to.be.eq(80)
-      expect(await converter.unlockVotes()).to.be.eq(80)
-      expect(await converter.unlockApproved(alice.address)).to.be.eq(30)
-      await expect(converter.connect(alice).unapproveUnlock(70)).to.be.revertedWith('Converter: Not enough uTokens locked by user')
-    })
-
-    it('threshold met', async () => {
-      let bobTokenIds: Array<number>
-      bobTokenIds = [0, 1, 2]
-      await mineBlock(provider, (await provider.getBlock('latest')).timestamp + 1)
-      await converter.connect(bob).deposit(bobTokenIds, emptyArray, nft1.address)
-      await mineBlock(provider, (await provider.getBlock('latest')).timestamp + 1)
-
-      await converter.connect(bob).issue()
-
-      await converter.connect(bob).transfer(alice.address, 100)
-      await converter.connect(bob).transfer(carol.address, 100)
-      await mineBlock(provider, (await provider.getBlock('latest')).timestamp + 1)
-
-      await converter.connect(bob).bid(0, { value: 50 })
-      await converter.connect(bob).bid(1, { value: 10 })
-      await converter.connect(carol).bid(1, { value: 30 })
-      await converter.connect(bob).bid(2, { value: 20 })
-      await converter.connect(alice).bid(2, { value: 60 })
-      expect(await converter.totalBidAmount()).to.be.eq(140)
-      await mineBlock(provider, (await provider.getBlock('latest')).timestamp + 1)
-      await converter.connect(bob).approveUnlock(50)
-      await converter.connect(carol).approveUnlock(90)
-      await converter.connect(alice).approveUnlock(80)
-      await expect(converter.connect(bob).claim(0)).to.be.revertedWith('Converter: Threshold not met')
-      await expect(converter.connect(alice).redeemETH(20)).to.be.revertedWith('Converter: Threshold not met')
-
-      await mineBlock(provider, (await provider.getBlock('latest')).timestamp + 1)
-      await converter.connect(bob).approveUnlock(730)
-      expect(await converter.unlockVotes()).to.be.eq(950)
-      await expect(converter.connect(alice).claim(0)).to.be.revertedWith('Converter: Only winner can claim')
-      await expect(converter.connect(carol).claim(2)).to.be.revertedWith('Converter: Only winner can claim')
-      await expect(converter.connect(bob).claim(1)).to.be.revertedWith('Converter: Only winner can claim')
-      await expect(converter.connect(bob).claim(2)).to.be.revertedWith('Converter: Only winner can claim')
-      await mineBlock(provider, (await provider.getBlock('latest')).timestamp + 1)
-
-      await converter.connect(bob).claim(0)
-      expect(await nft1.balanceOf(bob.address)).to.be.eq(1)
-      await converter.connect(carol).claim(1)
-      // Carol has 3 NFTs from the nft1 contract outside of these bids
-      expect(await nft1.balanceOf(carol.address)).to.be.eq(4)
-      await converter.connect(alice).claim(2)
-      expect(await nft1.balanceOf(alice.address)).to.be.eq(1)
-      await mineBlock(provider, (await provider.getBlock('latest')).timestamp + 1)
-
-      await expect(converter.connect(bob).claim(0)).to.be.revertedWith('Converter: Already claimed')
-
-      await expect(converter.connect(alice).approveUnlock(10)).to.be.revertedWith('Converter: Threshold reached')
-      await expect(converter.connect(alice).unapproveUnlock(80)).to.be.revertedWith('Converter: Threshold reached')
-      await expect(converter.connect(alice).redeemETH(30)).to.be.revertedWith('ERC20: transfer amount exceeds balance')
-      await expect(converter.connect(alice).unbid(2)).to.be.revertedWith('Converter: Release threshold has been met, winner can\'t unbid')
-
-      await mineBlock(provider, (await provider.getBlock('latest')).timestamp + 1)
-      // 140 * 80 / 1000 = 11.2
-      expect(await converter.unlockApproved(alice.address)).to.be.eq(80)
-      await expect(await converter.connect(alice).redeemETH(0)).to.changeEtherBalance(alice, 11)
-      expect(await converter.unlockApproved(alice.address)).to.be.eq(0)
-      // 140 * 20 / 1000 = 2.8
-      expect(await converter.balanceOf(alice.address)).to.be.eq(20)
-      await expect(await converter.connect(alice).redeemETH(20)).to.changeEtherBalance(alice, 2)
-      expect(await converter.balanceOf(alice.address)).to.be.eq(0)
-      expect(await converter.balanceOf(bob.address)).to.be.eq(20)
-      // 140 * 800 / 1000 = 112
-      await expect(await converter.connect(bob).redeemETH(20)).to.changeEtherBalance(bob, 112)
-      expect(await converter.balanceOf(bob.address)).to.be.eq(0)
-      expect(await converter.unlockApproved(bob.address)).to.be.eq(0)
-
-      expect(await converter.balanceOf(carol.address)).to.be.eq(10)
-      // 140 * 100 / 1000 = 14
-      await expect(await converter.connect(carol).redeemETH(10)).to.changeEtherBalance(carol, 14)
-      expect(await converter.unlockApproved(carol.address)).to.be.eq(0)
-    })
+    // it('proxy creator', async () => {
+    //   proxyCreator = await deployContract(alice, ProxyCreator, [factory.address], overrides)
+    //   await proxyCreator.connect(alice).create(1000, 18, 'Star Wars Collection', 'uSTAR', 950, 'Leia\'s Star Wars NFT Collection')
+    //   await proxyCreator.connect(alice).setWhiteList([], true, true)
+    //   await proxyCreator.connect(alice).setConstraints(nft1.address, true, [], true, false)
+    //   await proxyCreator.connect(alice).issue()
+    //   const converterAddr = await factory.uTokens(2)
+    //   converter3 = new Contract(converterAddr, JSON.stringify(Converter.abi), provider)
+    //   await nft1.connect(bob).setApprovalForAll(proxyCreator.address, true)
+    //   await proxyCreator.connect(bob).deposit([0, 1, 2], [1, 1, 1], nft1.address)
+    //   expect(await nft1.balanceOf(converter3.address)).to.be.eq(3)
+    //   expect((await converter3.nfts(0)).amount).to.be.eq(1)
+    // })
 })

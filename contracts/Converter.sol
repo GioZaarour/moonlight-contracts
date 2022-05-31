@@ -1,106 +1,127 @@
-pragma solidity ^0.8.4;
+pragma solidity 0.6.12;
 
-import "@openzeppelin/contracts/utils/introspection/ERC165Checker.sol";
-import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
-import "@openzeppelin/contracts/token/ERC721/IERC721.sol";
-import "@openzeppelin/contracts/token/ERC1155/IERC1155.sol";
-import "@openzeppelin/contracts/token/ERC1155/utils/ERC1155Receiver.sol";
-import "@openzeppelin/contracts/utils/math/SafeMath.sol";
-import "./interfaces/IUnicFactory.sol";
+import "@openzeppelin/contracts-upgradeable/proxy/Initializable.sol";
+import "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
+import "@openzeppelin/contracts-upgradeable/introspection/ERC165CheckerUpgradeable.sol";
+import "@openzeppelin/contracts-upgradeable/token/ERC721/IERC721Upgradeable.sol";
+import "@openzeppelin/contracts-upgradeable/token/ERC1155/IERC1155Upgradeable.sol";
+import "@openzeppelin/contracts-upgradeable/token/ERC1155/ERC1155ReceiverUpgradeable.sol";
+import "@openzeppelin/contracts-upgradeable/math/SafeMathUpgradeable.sol";
+import "./interfaces/IMoonFactory.sol";
+import "./interfaces/IProxyTransaction.sol";
+import "./interfaces/IGetAuctionInfo.sol"; 
+import "./interfaces/IConverter.sol";
+import "./abstract/ERC20VotesUpgradeable.sol";
 
-//?this is the vault contract that holds NFTs and ETH collected from token sale?
-
-contract Converter is ERC20, ERC1155Receiver {
-    using SafeMath for uint;
+contract Converter is IConverter, IProxyTransaction, Initializable, ERC1155ReceiverUpgradeable, ERC20VotesUpgradeable, OwnableUpgradeable {
+    using SafeMathUpgradeable for uint;
 
     // List of NFTs that have been deposited
     struct NFT {
     	address contractAddr;
     	uint256 tokenId;
         uint256 amount;
-        bool claimed;
-    }
-
-    struct Bid {
-    	address bidder;
-    	uint256 amount;
-        uint time;
+        uint256 triggerPrice;
     }
 
     mapping(uint256 => NFT) public nfts;
     // Current index and length of nfts
     uint256 public currentNFTIndex = 0;
-
     // If active, NFTs can’t be withdrawn
     bool public active = false;
-    uint256 public totalBidAmount = 0;
-    uint256 public unlockVotes = 0;
-    uint256 public _threshold;
     address public issuer;
-    string public _description;
     uint256 public cap;
+    address public converterTimeLock;
 
-    // Amount of uTokens each user has voted to unlock collection
-    mapping(address => uint256) public unlockApproved;
+    IMoonFactory public factory;
 
-    //decimal places displayed for viewing overriding normal value from ERC20
-    uint8 decimal;
-
-    IUnicFactory public factory;
-
-    // NFT index to Bid
-    mapping(uint256 => Bid) public bids;
-    // NFT index to address to amount
-    mapping(uint256 => mapping(address => uint256)) public bidRefunds;
-    uint public constant TOP_BID_LOCK_TIME = 3 days;
-
-    event Deposited(uint256[] tokenIDs, uint256[] amounts, address contractAddr);
+    event Deposited(uint256[] tokenIDs, uint256[] amounts, uint256[] triggerPrices, address indexed contractAddr);
     event Refunded();
     event Issued();
-    event BidCreated(address sender, uint256 nftIndex, uint256 bidAmount);
-    event BidRemoved(address sender, uint256 nftIndex);
-    event ClaimedNFT(address winner, uint256 nftIndex, uint256 tokenId);
+    event PriceUpdate(uint256[] indexed nftIndex, uint[] price);
 
     bytes private constant VALIDATOR = bytes('JCMY');
 
-    constructor (uint256 totalSupply, uint8 _decimals, string memory name, string memory symbol, uint256 threshold, string memory description, address _issuer, IUnicFactory _factory)
-        ERC20(name, symbol)
+    function initialize (
+        string memory name,
+        string memory symbol,
+        address _issuer,
+        address _factory
+    )
+        public
+        initializer
+        returns (bool)
     {
-        decimal = _decimals;
+        require(_issuer != address(0) && _factory != address(0), "Invalid address");
+        __Ownable_init();
+        __ERC20_init(name, symbol);
         issuer = _issuer;
-        _description = description;
-        _threshold = threshold;
-        factory = _factory;
-        cap = totalSupply;
+        factory = IMoonFactory(_factory);
+        cap = factory.moonTokenSupply();
+        return true;
+    }
+
+    function burn(address _account, uint256 _amount) public {
+        require(msg.sender == factory.auctionHandler(), "Converter: Only auction handler can burn");
+        super._burn(_account, _amount);
+    }
+
+    function setCurator(address _issuer) external {
+        require(active, "Converter: Tokens have not been issued yet");
+        require(msg.sender == factory.owner() || msg.sender == issuer, "Converter: Not vault manager or issuer");
+
+        issuer = _issuer;
+    }
+
+    function setTriggers(uint256[] calldata _nftIndex, uint256[] calldata _triggerPrices) external {
+        require(msg.sender == issuer, "Converter: Only issuer can set trigger prices");
+        require(_nftIndex.length <= 50, "Converter: A maximum of 50 trigger prices can be set at once");
+        require(_nftIndex.length == _triggerPrices.length, "Array length mismatch");
+        for (uint8 i = 0; i < 50; i++) {
+            if (_nftIndex.length == i) {
+                break;
+            }
+            // require(!IGetAuctionInfo(factory.auctionHandler()).onAuction(address(this), _nftIndex[i]), "Converter: Already on auction");
+            nfts[_nftIndex[i]].triggerPrice = _triggerPrices[i];
+        }
+
+        emit PriceUpdate(_nftIndex, _triggerPrices);
+    }
+
+    function setConverterTimeLock(address _converterTimeLock) public override {
+        require(msg.sender == address(factory), "Converter: Only factory can set converterTimeLock");
+        require(_converterTimeLock != address(0), "Invalid address");
+        converterTimeLock = _converterTimeLock;
     }
 
     // deposits an nft using the transferFrom action of the NFT contractAddr
-    function deposit(uint256[] calldata tokenIDs, uint256[] calldata amounts, address contractAddr) external {
+    function deposit(uint256[] calldata tokenIDs, uint256[] calldata amounts, uint256[] calldata triggerPrices, address contractAddr) external {
         require(msg.sender == issuer, "Converter: Only issuer can deposit");
         require(tokenIDs.length <= 50, "Converter: A maximum of 50 tokens can be deposited in one go");
         require(tokenIDs.length > 0, "Converter: You must specify at least one token ID");
+        require(tokenIDs.length == triggerPrices.length, "Array length mismatch");
 
-        if (ERC165Checker.supportsInterface(contractAddr, 0xd9b67a26)){
-            IERC1155(contractAddr).safeBatchTransferFrom(msg.sender, address(this), tokenIDs, amounts, VALIDATOR);
+        if (ERC165CheckerUpgradeable.supportsInterface(contractAddr, 0xd9b67a26)){
+            IERC1155Upgradeable(contractAddr).safeBatchTransferFrom(msg.sender, address(this), tokenIDs, amounts, VALIDATOR);
 
             for (uint8 i = 0; i < 50; i++){
                 if (tokenIDs.length == i){
                     break;
                 }
-                nfts[currentNFTIndex++] = NFT(contractAddr, tokenIDs[i], amounts[i], false);
+                nfts[currentNFTIndex++] = NFT(contractAddr, tokenIDs[i], amounts[i], triggerPrices[i]);
             }
         }
-        else if (ERC165Checker.supportsInterface(contractAddr, 0x80ac58cd)){
+        else {
             for (uint8 i = 0; i < 50; i++){
                 if (tokenIDs.length == i){
                     break;
                 }
-                IERC721(contractAddr).transferFrom(msg.sender, address(this), tokenIDs[i]);
-                nfts[currentNFTIndex++] = NFT(contractAddr, tokenIDs[i], 1, false);
+                IERC721Upgradeable(contractAddr).transferFrom(msg.sender, address(this), tokenIDs[i]);
+                nfts[currentNFTIndex++] = NFT(contractAddr, tokenIDs[i], 1, triggerPrices[i]);
             }
         }
 
-        emit Deposited(tokenIDs, amounts, contractAddr);
+        emit Deposited(tokenIDs, amounts, triggerPrices, contractAddr);
     }
 
     // Function that locks NFT collateral and issues the uTokens to the issuer
@@ -112,12 +133,36 @@ contract Converter is ERC20, ERC1155Receiver {
         address feeTo = factory.feeTo();
         uint256 feeAmount = 0;
         if (feeTo != address(0)) {
-            // 0.5% of uToken supply is sent to feeToAddress if fee is on
-            feeAmount = cap.div(200);
+            feeAmount = cap.div(factory.feeDivisor());
             _mint(feeTo, feeAmount);
         }
 
-        _mint(issuer, cap - feeAmount);
+        uint256 amount = cap - feeAmount;
+        _mint(issuer, amount);
+
+        if (!factory.airdropEnabled()) {
+            emit Issued();
+            return;
+        }
+
+        //EXCLUDE airdrop part
+        if (!factory.receivedAirdrop(msg.sender)) {
+            bool airdropEligible = false;
+            for (uint8 i = 0; i < currentNFTIndex; i++) {
+                if (factory.isAirdropCollection(nfts[i].contractAddr)) {
+                    airdropEligible = true;
+                    break;
+                }
+            }
+            if (airdropEligible) {
+                if (IERC20Upgradeable(factory.moon()).balanceOf(address(factory)) < factory.airdropAmount()) { //EXCLUDE
+                    emit Issued();
+                    return;
+                }
+                factory.setAirdropReceived(msg.sender);
+                IERC20Upgradeable(factory.moon()).transferFrom(address(factory), msg.sender, factory.airdropAmount()); //EXCLUDE
+            }
+        }
 
         emit Issued();
     }
@@ -135,11 +180,11 @@ contract Converter is ERC20, ERC1155Receiver {
         while (_index > 0 && _i < 50){
             NFT memory nft = nfts[_index - 1];
 
-            if (ERC165Checker.supportsInterface(nft.contractAddr, 0xd9b67a26)){
-                IERC1155(nft.contractAddr).safeTransferFrom(address(this), _to, nft.tokenId, nft.amount, data);
+            if (ERC165CheckerUpgradeable.supportsInterface(nft.contractAddr, 0xd9b67a26)){
+                IERC1155Upgradeable(nft.contractAddr).safeTransferFrom(address(this), _to, nft.tokenId, nft.amount, data);
             }
-            else if (ERC165Checker.supportsInterface(nft.contractAddr, 0x80ac58cd)){
-                IERC721(nft.contractAddr).safeTransferFrom(address(this), _to, nft.tokenId);
+            else {
+                IERC721Upgradeable(nft.contractAddr).safeTransferFrom(address(this), _to, nft.tokenId);
             }
 
             delete nfts[_index - 1];
@@ -153,105 +198,18 @@ contract Converter is ERC20, ERC1155Receiver {
         emit Refunded();
     }
 
-    function bid(uint256 nftIndex) external payable {
-        require(unlockVotes < _threshold, "Converter: Release threshold has been met, no more bids allowed");
-        Bid memory topBid = bids[nftIndex];
-        require(topBid.bidder != msg.sender, "Converter: You have an active bid");
-        require(topBid.amount < msg.value, "Converter: Bid too low");
-        require(bidRefunds[nftIndex][msg.sender] == 0, "Converter: Collect bid refund");
+    function claimNFT(uint256 _nftIndex, address _to) external returns (bool) {
+        require(msg.sender == factory.auctionHandler(), "Converter: Not auction handler");
 
-        bids[nftIndex] = Bid(msg.sender, msg.value, getBlockTimestamp());
-        bidRefunds[nftIndex][topBid.bidder] = topBid.amount;
-        totalBidAmount += msg.value - topBid.amount;
-
-        emit BidCreated(msg.sender, nftIndex, msg.value);
-    }
-
-    function unbid(uint256 nftIndex) external {
-        Bid memory topBid = bids[nftIndex];
-        bool isTopBidder = topBid.bidder == msg.sender;
-        if (unlockVotes >= _threshold) {
-            require(!isTopBidder, "Converter: Release threshold has been met, winner can't unbid");
-        }
-
-        if (isTopBidder) {
-            require(topBid.time + TOP_BID_LOCK_TIME < getBlockTimestamp(), "Converter: Top bid locked");
-            totalBidAmount -= topBid.amount;
-            bids[nftIndex] = Bid(address(0), 0, getBlockTimestamp());
-            (bool sent, bytes memory data) = msg.sender.call{value: topBid.amount}("");
-            require(sent, "Converter: Failed to send Ether");
-
-            emit BidRemoved(msg.sender, nftIndex);
-        }
-        else { 
-            uint256 refundAmount = bidRefunds[nftIndex][msg.sender];
-            require(refundAmount > 0, "Converter: no bid found");
-            bidRefunds[nftIndex][msg.sender] = 0;
-            (bool sent, bytes memory data) = msg.sender.call{value: refundAmount}("");
-            require(sent, "Converter: Failed to send Ether");
-        }
-    }
-
-    // Claim NFT if address is winning bidder
-    function claim(uint256 nftIndex) external {
-        require(unlockVotes >= _threshold, "Converter: Threshold not met");
-        require(!nfts[nftIndex].claimed, "Converter: Already claimed");
-        Bid memory topBid = bids[nftIndex];
-        require(msg.sender == topBid.bidder, "Converter: Only winner can claim");
-
-        nfts[nftIndex].claimed = true;
-        NFT memory winningNFT = nfts[nftIndex];
-
-        if (ERC165Checker.supportsInterface(winningNFT.contractAddr, 0xd9b67a26)){
+        if (ERC165CheckerUpgradeable.supportsInterface(nfts[_nftIndex].contractAddr, 0xd9b67a26)){
             bytes memory data;
-            IERC1155(winningNFT.contractAddr).safeTransferFrom(address(this), topBid.bidder, winningNFT.tokenId, winningNFT.amount, data);
+            IERC1155Upgradeable(nfts[_nftIndex].contractAddr).safeTransferFrom(address(this), _to, nfts[_nftIndex].tokenId, nfts[_nftIndex].amount, data);
         }
-        else if (ERC165Checker.supportsInterface(winningNFT.contractAddr, 0x80ac58cd)){
-            IERC721(winningNFT.contractAddr).safeTransferFrom(address(this), topBid.bidder, winningNFT.tokenId);
+        else {
+            IERC721Upgradeable(nfts[_nftIndex].contractAddr).safeTransferFrom(address(this), _to, nfts[_nftIndex].tokenId);
         }
 
-        emit ClaimedNFT(topBid.bidder, nftIndex, winningNFT.tokenId);
-    }
-
-    // Approve collection unlock
-    function approveUnlock(uint256 amount) external {
-        require(unlockVotes < _threshold, "Converter: Threshold reached");
-        _transfer(msg.sender, address(this), amount);
-
-        unlockApproved[msg.sender] += amount;
-        unlockVotes += amount;
-    }
-
-    // Unapprove collection unlock
-    function unapproveUnlock(uint256 amount) external {
-        require(unlockVotes < _threshold, "Converter: Threshold reached");
-        require(unlockApproved[msg.sender] >= amount, "Converter: Not enough uTokens locked by user");
-        unlockVotes -= amount;
-        unlockApproved[msg.sender] -= amount;
-
-        _transfer(address(this), msg.sender, amount);
-    }
-
-    // Claim ETH function
-    function redeemETH(uint256 amount) external {
-        require(unlockVotes >= _threshold, "Converter: Threshold not met");
-        // Deposit uTokens
-        if (amount > 0) {
-            _transfer(msg.sender, address(this), amount);
-        }
-        // Combine approved balance + newly deposited balance
-        uint256 finalBalance = amount + unlockApproved[msg.sender];
-        // Remove locked uTokens tracked for user
-        unlockApproved[msg.sender] = 0;
-
-        // Redeem ETH corresponding to uToken amount
-        (bool sent, bytes memory data) = msg.sender.call{value: totalBidAmount.mul(finalBalance).div(this.totalSupply())}("");
-        require(sent, "Converter: Failed to send Ether");
-    }
-
-    function getBlockTimestamp() internal view returns (uint) {
-        // solium-disable-next-line security/no-block-members
-        return block.timestamp;
+        return true;
     }
 
     /**
@@ -269,9 +227,27 @@ contract Converter is ERC20, ERC1155Receiver {
         }
     }
 
-    //override from ERC20
-    function decimals() public view override returns (uint8) {
-        return decimal;
+    /**
+     * @dev See {ERC20-_beforeTokenTransfer}.
+     */
+    function _beforeTokenTransfer(address from, address to, uint256 amount) internal virtual override {
+        super._beforeTokenTransfer(from, to, amount);
+        // Move voting rights
+        _moveDelegates(_delegates[from], _delegates[to], amount);
     }
 
+    /**
+     * @dev implements the proxy transaction used by {ConverterTimeLock-executeTransaction}
+     */
+    function forwardCall(address target, uint256 value, bytes calldata callData) external override payable returns (bool success, bytes memory returnData) {
+        require(target != address(factory), "Converter: No proxy transactions calling factory allowed");
+        require(target != address(factory.moon()), "Converter: No proxy transactions calling unic allowed");  // EXCLUDE
+        require(msg.sender == converterTimeLock, "Converter: Caller is not the converterTimeLock contract");
+        return target.call{value: value}(callData);
+    }
+
+    function getBlockTimestamp() internal view returns (uint) {
+        // solium-disable-next-line security/no-block-members
+        return block.timestamp;
+    }
 }

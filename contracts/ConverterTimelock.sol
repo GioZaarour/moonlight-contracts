@@ -9,7 +9,9 @@
 
 pragma solidity 0.6.12;
 
-
+import "@openzeppelin/contracts/math/SafeMath.sol";
+import "./interfaces/IProxyTransaction.sol";
+import "./ConverterGovernorAlphaConfig.sol";
 
 /**
  * Time lock for queued proposals to ensure the minimum delay between the end of voting and execution
@@ -43,7 +45,7 @@ contract ConverterTimeLock {
     receive() external payable { }
 
     /**
-     * @dev for the UnicGovernorAlphaFactory
+     * @dev for the MoonGovernorAlphaFactory
      */
     function setAdmin(address _admin) public {
         require(msg.sender == admin, "TimeLock::acceptAdmin: Call must come from admin.");

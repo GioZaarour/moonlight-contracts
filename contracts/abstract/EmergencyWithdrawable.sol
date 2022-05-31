@@ -1,16 +1,16 @@
-pragma solidity ^0.8.4;
+pragma solidity 0.6.12;
 
-import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
-import "@openzeppelin/contracts/access/Ownable.sol";
+import "@openzeppelin/contracts-upgradeable/token/ERC20/IERC20Upgradeable.sol";
+import "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
 
-abstract contract EmergencyWithdrawable is Ownable {
+abstract contract EmergencyWithdrawable is OwnableUpgradeable {
     // for worst case scenarios or to recover funds from people sending to this contract by mistake
     function emergencyWithdrawETH() external payable onlyOwner {
-        payable(msg.sender).transfer(address(this).balance);
+        msg.sender.send(address(this).balance);
     }
 
     // for worst case scenarios or to recover funds from people sending to this contract by mistake
-    function emergencyWithdrawTokens(IERC20 token) external onlyOwner {
+    function emergencyWithdrawTokens(IERC20Upgradeable token) external onlyOwner {
         token.transfer(msg.sender, token.balanceOf(address(this)));
     }
 }

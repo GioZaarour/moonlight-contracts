@@ -1,7 +1,7 @@
-pragma solidity ^0.8.4;
+pragma solidity 0.6.12;
 
-import "@openzeppelin/contracts-upgradeable/token/ERC20/extensions/ERC20BurnableUpgradeable.sol";
-import "@openzeppelin/contracts-upgradeable/utils/math/SafeMathUpgradeable.sol";
+import "@openzeppelin/contracts-upgradeable/token/ERC20/ERC20BurnableUpgradeable.sol";
+import "@openzeppelin/contracts-upgradeable/math/SafeMathUpgradeable.sol";
 
 /**
  * Expand the ERC20Burnable contract to include a governance voting feature.
@@ -113,7 +113,7 @@ abstract contract ERC20VotesUpgradeable is ERC20BurnableUpgradeable  {
         address signatory = ecrecover(digest, v, r, s);
         require(signatory != address(0), "UNIC::delegateBySig: invalid signature");
         require(nonce == nonces[signatory]++, "UNIC::delegateBySig: invalid nonce");
-        require(block.timestamp <= expiry, "UNIC::delegateBySig: signature expired");
+        require(now <= expiry, "UNIC::delegateBySig: signature expired");
         return _delegate(signatory, delegatee);
     }
 
@@ -233,7 +233,7 @@ abstract contract ERC20VotesUpgradeable is ERC20BurnableUpgradeable  {
         return uint32(n);
     }
 
-    function getChainId() internal view returns (uint) {
+    function getChainId() internal pure returns (uint) {
         uint256 chainId;
         assembly { chainId := chainid() }
         return chainId;
