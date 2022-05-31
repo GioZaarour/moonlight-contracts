@@ -1,9 +1,9 @@
 # Proxy transactions
 
 ### Deployment order
-1. UnicConverterGovernorAlphaFactory
-2. UnicConverterProxyTransactionFactory
-3. UnicGovernorAlphaFactory
+1. MoonConverterGovernorAlphaFactory
+2. MoonConverterProxyTransactionFactory
+3. MoonGovernorAlphaFactory
 
 ### How it works
 
