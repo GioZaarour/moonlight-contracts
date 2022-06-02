@@ -27,7 +27,7 @@ contract MoonFactory is IMoonFactory, Initializable, OwnableUpgradeable {
 
     uint256 public override feeDivisor; 
 
-    uint256 public override moonTokenSupply;
+    uint256 public override moonTokenSupply; //not sure wha this is for
 
     // 200 Moon airdrop
     uint256 public override constant airdropAmount = 200 * 1e18;//REMOVE
@@ -78,7 +78,8 @@ contract MoonFactory is IMoonFactory, Initializable, OwnableUpgradeable {
     function createMoonToken(
         string calldata name,
         string calldata symbol,
-        bool enableProxyTransactions
+        bool enableProxyTransactions,
+        bool crowdfundingMode
     ) external override returns (address, address) {
         require(bytes(name).length < 32, 'MoonFactory: MAX NAME');
         require(bytes(symbol).length < 16, 'MoonFactory: MAX TICKER');
@@ -86,7 +87,7 @@ contract MoonFactory is IMoonFactory, Initializable, OwnableUpgradeable {
         address issuer = msg.sender;
         address converter = deployMinimal(
             converterImplementation,
-            abi.encodeWithSignature("initialize(string,string,address,address)", name, symbol, issuer, address(this))
+            abi.encodeWithSignature("initialize(string,string,address,address)", name, symbol, issuer, address(this), crowdfundingMode)
         );
         address converterGovernorAlpha;
         if (enableProxyTransactions) {
@@ -99,7 +100,7 @@ contract MoonFactory is IMoonFactory, Initializable, OwnableUpgradeable {
         getMoonToken[converter] = moonTokens.length;
         // Add to list
         moonTokens.push(converter);
-        IERC20(moon).approve(converter, airdropAmount);
+        IERC20(moon).approve(converter, airdropAmount); //remove
         emit TokenCreated(msg.sender, converter);
 
         return (converter, address(converterGovernorAlpha));

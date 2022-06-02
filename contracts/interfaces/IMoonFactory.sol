@@ -25,7 +25,8 @@ interface IMoonFactory {
     function createMoonToken(
         string calldata name,
         string calldata symbol,
-        bool enableProxyTransactions
+        bool enableProxyTransactions, 
+        bool crowdfundingMode
     ) external returns (address, address);
 
     function setFeeTo(address) external;

@@ -16,6 +16,17 @@ import "./abstract/ERC20VotesUpgradeable.sol";
 contract Converter is IConverter, IProxyTransaction, Initializable, ERC1155ReceiverUpgradeable, ERC20VotesUpgradeable, OwnableUpgradeable {
     using SafeMathUpgradeable for uint;
 
+    //list of target NFTs for crowdfunding
+    struct TargetNft {
+        address nftContract;
+        uint tokenId;
+        uint amount;
+        uint buyNowPrice;
+    }
+
+    mapping(uint256 => TargetNft) public targetNfts;
+    uint256 public targetNFTIndex = 0;
+
     // List of NFTs that have been deposited
     struct NFT {
     	address contractAddr;
@@ -30,8 +41,12 @@ contract Converter is IConverter, IProxyTransaction, Initializable, ERC1155Recei
     // If active, NFTs can’t be withdrawn
     bool public active = false;
     address public issuer;
-    uint256 public cap;
+    uint256 public cap; //whatever the current supply of tokens is
     address public converterTimeLock;
+    //whether or not this is currently in crowdfund stage
+    bool public crowdfundingMode;
+    //current crowdfund goal based on buy now prices
+    uint256 public crowdfundGoal;
 
     IMoonFactory public factory;
 
@@ -39,6 +54,7 @@ contract Converter is IConverter, IProxyTransaction, Initializable, ERC1155Recei
     event Refunded();
     event Issued();
     event PriceUpdate(uint256[] indexed nftIndex, uint[] price);
+    event TargetAdded(uint256[] tokenIDs, uint256[] amounts, uint256[] buyNowPrices, address indexed contractAddr);
 
     bytes private constant VALIDATOR = bytes('JCMY');
 
@@ -46,7 +62,8 @@ contract Converter is IConverter, IProxyTransaction, Initializable, ERC1155Recei
         string memory name,
         string memory symbol,
         address _issuer,
-        address _factory
+        address _factory, 
+        bool _crowdfundingMode
     )
         public
         initializer
@@ -55,6 +72,7 @@ contract Converter is IConverter, IProxyTransaction, Initializable, ERC1155Recei
         require(_issuer != address(0) && _factory != address(0), "Invalid address");
         __Ownable_init();
         __ERC20_init(name, symbol);
+        crowdfundingMode = _crowdfundingMode;
         issuer = _issuer;
         factory = IMoonFactory(_factory);
         cap = factory.moonTokenSupply();
@@ -94,6 +112,48 @@ contract Converter is IConverter, IProxyTransaction, Initializable, ERC1155Recei
         converterTimeLock = _converterTimeLock;
     }
 
+    //can add multiple NFTs with this but only if they come from the same collection (contractAddr)
+    //otherwise will have to call this func multiple times for different NFT contracts
+    function addTargetNft(uint256[] calldata tokenIDs, uint256[] calldata amounts, uint256[] calldata buyNowPrices, address contractAddr) external {
+        require(msg.sender == issuer, "Converter: Only issuer can add target NFTs");
+        require(tokenIDs.length <= 50, "Converter: A maximum of 50 tokens can be added in one go");
+        require(tokenIDs.length > 0, "Converter: You must specify at least one token ID");
+        require(tokenIDs.length == buyNowPrices.length, "Array length mismatch");
+        
+        //if it is an ERC1155 we will take the amounts[] they give us
+        if (ERC165CheckerUpgradeable.supportsInterface(contractAddr, 0xd9b67a26)){
+            for (uint8 i = 0; i < 50; i++){
+                if (i == tokenIDs.length) {
+                    break;
+                }
+                targetNfts[targetNFTIndex++] = TargetNft(contractAddr, tokenIDs[i], amounts[i], buyNowPrices[i]);
+            }
+        }
+        //else it is ERC721 and amounts will always be 1
+        else {
+            for (uint8 i = 0; i < 50; i++){
+                if (i == tokenIDs.length) {
+                    break;
+                }
+                targetNfts[targetNFTIndex++] = TargetNft(contractAddr, tokenIDs[i], 1, buyNowPrices[i]);
+            }
+        }
+
+        emit TargetAdded(tokenIDs, amounts, buyNowPrices, contractAddr);
+        emit UpdatedGoal();
+    }
+
+    function setBuyNowPrices() {
+        //post-MVP: chainlink => opensea API. update periodically
+    }
+
+    //call this internally whenever buy prices change
+    function updateCrowdfundGoal() {
+
+    }
+
+    //****how can the above be updated post-MVP WRT automatic price updates from opensea?*******
+
     // deposits an nft using the transferFrom action of the NFT contractAddr
     function deposit(uint256[] calldata tokenIDs, uint256[] calldata amounts, uint256[] calldata triggerPrices, address contractAddr) external {
         require(msg.sender == issuer, "Converter: Only issuer can deposit");
@@ -101,6 +161,7 @@ contract Converter is IConverter, IProxyTransaction, Initializable, ERC1155Recei
         require(tokenIDs.length > 0, "Converter: You must specify at least one token ID");
         require(tokenIDs.length == triggerPrices.length, "Array length mismatch");
 
+        //this if statement checks if the contractAddr is an ERC1155 contract
         if (ERC165CheckerUpgradeable.supportsInterface(contractAddr, 0xd9b67a26)){
             IERC1155Upgradeable(contractAddr).safeBatchTransferFrom(msg.sender, address(this), tokenIDs, amounts, VALIDATOR);
 
@@ -124,7 +185,7 @@ contract Converter is IConverter, IProxyTransaction, Initializable, ERC1155Recei
         emit Deposited(tokenIDs, amounts, triggerPrices, contractAddr);
     }
 
-    // Function that locks NFT collateral and issues the uTokens to the issuer
+    // Function that locks deposited NFTs as collateral and issues the uTokens to the issuer
     function issue() external {
         require(msg.sender == issuer, "Converter: Only issuer can issue the tokens");
         require(active == false, "Converter: Token is already active");
