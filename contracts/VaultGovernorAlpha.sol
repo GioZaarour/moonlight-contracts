@@ -12,10 +12,10 @@
 pragma solidity 0.6.12;
 pragma experimental ABIEncoderV2;
 
-import "./Converter.sol";
-import "./ConverterGovernorAlphaConfig.sol";
+import "./Vault.sol";
+import "./VaultGovernorAlphaConfig.sol";
 
-contract ConverterGovernorAlpha {
+contract VaultGovernorAlpha {
     /// @notice The name of this contract
     // XXX: string public constant name = "Compound Governor Alpha";
     string public constant name = "moonToken Governor Alpha";
@@ -40,14 +40,14 @@ contract ConverterGovernorAlpha {
     // XXX: function votingPeriod() public pure returns (uint) { return 17280; } // ~3 days in blocks (assuming 15s blocks)
     function votingPeriod() public returns (uint) { return config.votingPeriod(); }
 
-    ConverterGovernorAlphaConfig public config;
+    VaultGovernorAlphaConfig public config;
 
     /// @notice The address of the Compound Protocol TimeLock
     TimeLockInterface public timelock;
 
     /// @notice The address of the moonToken
     // XXX: CompInterface public comp;
-    Converter public moonToken;
+    Vault public moonToken;
 
     /// @notice The address of the Governor Guardian
     address public guardian;
@@ -152,9 +152,9 @@ contract ConverterGovernorAlpha {
 
     constructor(address timelock_, address _moonToken, address guardian_, address _config) public {
         timelock = TimeLockInterface(timelock_);
-        moonToken = Converter(_moonToken);
+        moonToken = Vault(_moonToken);
         guardian = guardian_;
-        config = ConverterGovernorAlphaConfig(_config);
+        config = VaultGovernorAlphaConfig(_config);
     }
 
     /**
@@ -201,7 +201,7 @@ contract ConverterGovernorAlpha {
     }
 
     /**
-     * Place a proposal in the ConverterTimeLock queue when the voting period has expired and the voting was successful.
+     * Place a proposal in the VaultTimeLock queue when the voting period has expired and the voting was successful.
      */
     function queue(uint proposalId) public {
         require(state(proposalId) == ProposalState.Succeeded, "GovernorAlpha::queue: proposal can only be queued if it is succeeded");

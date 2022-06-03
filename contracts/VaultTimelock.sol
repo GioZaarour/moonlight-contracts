@@ -9,14 +9,14 @@
 
 pragma solidity 0.6.12;
 
-import "@openzeppelin/contracts/math/SafeMath.sol";
+import "@openzeppelin/contracts/math/SafeMath.sol"; 
 import "./interfaces/IProxyTransaction.sol";
-import "./ConverterGovernorAlphaConfig.sol";
+import "./VaultGovernorAlphaConfig.sol";
 
 /**
  * Time lock for queued proposals to ensure the minimum delay between the end of voting and execution
  */
-contract ConverterTimeLock {
+contract VaultTimeLock {
     using SafeMath for uint;
 
     event NewAdmin(address indexed newAdmin);
@@ -25,21 +25,21 @@ contract ConverterTimeLock {
     event ExecuteTransaction(bytes32 indexed txHash, address indexed target, uint value, string signature,  bytes data, uint eta);
     event QueueTransaction(bytes32 indexed txHash, address indexed target, uint value, string signature, bytes data, uint eta);
 
-    // @dev the corresponding ConverterGovernorAlpha
+    // @dev the corresponding VaultGovernorAlpha
     address public admin;
 
-    ConverterGovernorAlphaConfig public config;
+    VaultGovernorAlphaConfig public config; 
 
     mapping (bytes32 => bool) public queuedTransactions;
 
-    IProxyTransaction converter;
+    IProxyTransaction vault;
 
-    constructor(address admin_, address _converter, address _config) public {
-        require(admin_ != address(0) && _converter != address(0) && _config != address(0), "Invalid address");
+    constructor(address admin_, address _vault, address _config) public {
+        require(admin_ != address(0) && _vault != address(0) && _config != address(0), "Invalid address");
         admin = admin_;
 
-        converter = IProxyTransaction(_converter);
-        config = ConverterGovernorAlphaConfig(_config);
+        vault = IProxyTransaction(_vault);
+        config = VaultGovernorAlphaConfig(_config);
     }
 
     receive() external payable { }
@@ -93,7 +93,7 @@ contract ConverterTimeLock {
         }
 
         // solium-disable-next-line security/no-call-value
-        (bool success, bytes memory returnData) = converter.forwardCall.value(value)(target, value, callData);
+        (bool success, bytes memory returnData) = vault.forwardCall.value(value)(target, value, callData);
         require(success, "TimeLock::executeTransaction: Transaction execution reverted.");
 
         emit ExecuteTransaction(txHash, target, value, signature, data, eta);

@@ -2,7 +2,7 @@ pragma solidity 0.6.12;
 
 import "@openzeppelin/contracts/access/Ownable.sol";
 
-contract ConverterGovernorAlphaConfig is Ownable {
+contract VaultGovernorAlphaConfig is Ownable {
     uint public constant MINIMUM_DELAY = 1 days;
     uint public constant MAXIMUM_DELAY = 30 days;
 

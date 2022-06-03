@@ -5,7 +5,7 @@ interface IMoonFactory {
 
     function feeTo() external view returns (address);
     function feeToSetter() external view returns (address);
-    function converterImplementation() external view returns (address);
+    function vaultImplementation() external view returns (address);
 
     function getMoonToken(address moonToken) external view returns (uint);
     function moonTokens(uint) external view returns (address);
@@ -31,7 +31,7 @@ interface IMoonFactory {
 
     function setFeeTo(address) external;
     function setFeeToSetter(address) external;
-    function setConverterImplementation(address) external;
+    function setVaultImplementation(address) external;
     function setFeeDivisor(uint) external;
     function setAuctionHandler(address) external;
     function setSupply(uint) external;

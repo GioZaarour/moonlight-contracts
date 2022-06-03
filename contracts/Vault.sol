@@ -10,10 +10,10 @@ import "@openzeppelin/contracts-upgradeable/math/SafeMathUpgradeable.sol";
 import "./interfaces/IMoonFactory.sol";
 import "./interfaces/IProxyTransaction.sol";
 import "./interfaces/IGetAuctionInfo.sol"; 
-import "./interfaces/IConverter.sol";
+import "./interfaces/IVault.sol";
 import "./abstract/ERC20VotesUpgradeable.sol";
 
-contract Converter is IConverter, IProxyTransaction, Initializable, ERC1155ReceiverUpgradeable, ERC20VotesUpgradeable, OwnableUpgradeable {
+contract Vault is IVault, IProxyTransaction, Initializable, ERC1155ReceiverUpgradeable, ERC20VotesUpgradeable, OwnableUpgradeable {
     using SafeMathUpgradeable for uint;
 
     //list of target NFTs for crowdfunding
@@ -42,7 +42,7 @@ contract Converter is IConverter, IProxyTransaction, Initializable, ERC1155Recei
     bool public active = false;
     address public issuer;
     uint256 public cap; //whatever the current supply of tokens is
-    address public converterTimeLock;
+    address public vaultTimeLock;
     IMoonFactory public factory;
 
 
@@ -91,47 +91,47 @@ contract Converter is IConverter, IProxyTransaction, Initializable, ERC1155Recei
     }
 
     function burn(address _account, uint256 _amount) public {
-        require(msg.sender == factory.auctionHandler(), "Converter: Only auction handler can burn");
+        require(msg.sender == factory.auctionHandler(), "Vault: Only auction handler can burn");
         super._burn(_account, _amount);
     }
 
     function setCurator(address _issuer) external {
-        require(active, "Converter: Tokens have not been issued yet");
-        require(msg.sender == factory.owner() || msg.sender == issuer, "Converter: Not vault manager or issuer");
+        require(active, "Vault: Tokens have not been issued yet");
+        require(msg.sender == factory.owner() || msg.sender == issuer, "Vault: Not vault manager or issuer");
 
         issuer = _issuer;
     }
 
     function setTriggers(uint256[] calldata _nftIndex, uint256[] calldata _triggerPrices) external {
-        require(msg.sender == issuer, "Converter: Only issuer can set trigger prices");
-        require(_nftIndex.length <= 50, "Converter: A maximum of 50 trigger prices can be set at once");
+        require(msg.sender == issuer, "Vault: Only issuer can set trigger prices");
+        require(_nftIndex.length <= 50, "Vault: A maximum of 50 trigger prices can be set at once");
         require(_nftIndex.length == _triggerPrices.length, "Array length mismatch");
         for (uint8 i = 0; i < 50; i++) {
             if (_nftIndex.length == i) {
                 break;
             }
-            // require(!IGetAuctionInfo(factory.auctionHandler()).onAuction(address(this), _nftIndex[i]), "Converter: Already on auction");
+            // require(!IGetAuctionInfo(factory.auctionHandler()).onAuction(address(this), _nftIndex[i]), "Vault: Already on auction");
             nfts[_nftIndex[i]].triggerPrice = _triggerPrices[i];
         }
 
         emit TriggerPriceUpdate(_nftIndex, _triggerPrices);
     }
 
-    function setConverterTimeLock(address _converterTimeLock) public override {
-        require(msg.sender == address(factory), "Converter: Only factory can set converterTimeLock");
-        require(_converterTimeLock != address(0), "Invalid address");
-        converterTimeLock = _converterTimeLock;
+    function setVaultTimeLock(address _vaultTimeLock) public override {
+        require(msg.sender == address(factory), "Vault: Only factory can set vaultTimeLock");
+        require(_vaultTimeLock != address(0), "Invalid address");
+        vaultTimeLock = _vaultTimeLock;
     }
 
     //can add multiple NFTs with this but only if they come from the same collection (contractAddr)
     //otherwise will have to call this func multiple times for different NFT contracts
     //notify user that buy now price is for the whole bundle
     function addTargetNft(uint256[] calldata tokenIDs, uint256[] calldata amounts, uint256[] calldata buyNowPrices, address contractAddr) external {
-        require(msg.sender == issuer, "Converter: Only issuer can add target NFTs");
-        require(tokenIDs.length <= 50, "Converter: A maximum of 50 tokens can be added in one go");
-        require(tokenIDs.length > 0, "Converter: You must specify at least one token ID");
+        require(msg.sender == issuer, "Vault: Only issuer can add target NFTs");
+        require(tokenIDs.length <= 50, "Vault: A maximum of 50 tokens can be added in one go");
+        require(tokenIDs.length > 0, "Vault: You must specify at least one token ID");
         require(tokenIDs.length == buyNowPrices.length, "Array length mismatch");
-        require(crowdfundingMode == true, "Converter: Crowdfund is not on");
+        require(crowdfundingMode == true, "Vault: Crowdfund is not on");
         
         //if it is an ERC1155 we will take the amounts[] they give us
         if (ERC165CheckerUpgradeable.supportsInterface(contractAddr, 0xd9b67a26)){
@@ -159,10 +159,10 @@ contract Converter is IConverter, IProxyTransaction, Initializable, ERC1155Recei
 
     function setBuyNowPrices(uint256[] calldata _targetNftIndex, uint256[] calldata _buyNowPrices) external {
         //post-MVP: chainlink => opensea API. update periodically
-        require(msg.sender == issuer, "Converter: Only issuer can set buy prices");
-        require(_targetNftIndex.length <= 50, "Converter: A maximum of 50 buy prices can be set at once");
+        require(msg.sender == issuer, "Vault: Only issuer can set buy prices");
+        require(_targetNftIndex.length <= 50, "Vault: A maximum of 50 buy prices can be set at once");
         require(_targetNftIndex.length == _buyNowPrices.length, "Array length mismatch");
-        require(crowdfundingMode == true, "Converter: Crowdfund is not on");
+        require(crowdfundingMode == true, "Vault: Crowdfund is not on");
         for (uint8 i = 0; i < 50; i++) {
             if (_targetNftIndex.length == i) {
                 break;
@@ -176,7 +176,7 @@ contract Converter is IConverter, IProxyTransaction, Initializable, ERC1155Recei
 
     //call this internally whenever buy prices change
     function updateCrowdfundGoal() public {
-        require(crowdfundingMode == true, "Converter: Crowdfund is not on");
+        require(crowdfundingMode == true, "Vault: Crowdfund is not on");
 
         //post-MVP: automatically update buy prices here, then make setBuyNowPrices() as onlyOwner
 
@@ -189,9 +189,9 @@ contract Converter is IConverter, IProxyTransaction, Initializable, ERC1155Recei
 
     // deposits an nft using the transferFrom action of the NFT contractAddr
     function deposit(uint256[] calldata tokenIDs, uint256[] calldata amounts, uint256[] calldata triggerPrices, address contractAddr) external {
-        require(msg.sender == issuer, "Converter: Only issuer can deposit");
-        require(tokenIDs.length <= 50, "Converter: A maximum of 50 tokens can be deposited in one go");
-        require(tokenIDs.length > 0, "Converter: You must specify at least one token ID");
+        require(msg.sender == issuer, "Vault: Only issuer can deposit");
+        require(tokenIDs.length <= 50, "Vault: A maximum of 50 tokens can be deposited in one go");
+        require(tokenIDs.length > 0, "Vault: You must specify at least one token ID");
         require(tokenIDs.length == triggerPrices.length, "Array length mismatch");
 
         //this if statement checks if the contractAddr is an ERC1155 contract
@@ -221,9 +221,9 @@ contract Converter is IConverter, IProxyTransaction, Initializable, ERC1155Recei
     // Function that locks deposited NFTs as collateral and issues the uTokens to the issuer
     //puts the entire token supply (aka cap) in th issuers wallet (**for non-crowdfund mode)
     function issue() external {
-        require(msg.sender == issuer, "Converter: Only issuer can issue the tokens");
-        require(active == false, "Converter: Token is already active");
-        require(crowdfundingMode == false, "Converter: Crowdfund is on");
+        require(msg.sender == issuer, "Vault: Only issuer can issue the tokens");
+        require(active == false, "Vault: Token is already active");
+        require(crowdfundingMode == false, "Vault: Crowdfund is on");
 
         active = true;
         address feeTo = factory.feeTo();
@@ -271,7 +271,7 @@ contract Converter is IConverter, IProxyTransaction, Initializable, ERC1155Recei
     //handles minting new tokens for crowdfunding mode, whether crowdfund creator or anyone else
     function purchaseCrowdfunding(uint amount) external payable {
         require (msg.value >= amount*moonTokenPrice);
-        require (crowdfundingMode == true, "Converter: Crowdfund is not on");
+        require (crowdfundingMode == true, "Vault: Crowdfund is not on");
 
         //don't forget to add paying fees here
         //also more require statements, and emit events
@@ -283,8 +283,8 @@ contract Converter is IConverter, IProxyTransaction, Initializable, ERC1155Recei
 
     // Function that allows NFTs to be refunded (prior to issue being called)
     function refund(address _to) external {
-        require(!active, "Converter: Contract is already active - cannot refund");
-        require(msg.sender == issuer, "Converter: Only issuer can refund");
+        require(!active, "Vault: Contract is already active - cannot refund");
+        require(msg.sender == issuer, "Vault: Only issuer can refund");
 
         // Only transfer maximum of 50 at a time to limit gas per call
         uint8 _i = 0;
@@ -313,7 +313,7 @@ contract Converter is IConverter, IProxyTransaction, Initializable, ERC1155Recei
     }
 
     function claimNFT(uint256 _nftIndex, address _to) external returns (bool) {
-        require(msg.sender == factory.auctionHandler(), "Converter: Not auction handler");
+        require(msg.sender == factory.auctionHandler(), "Vault: Not auction handler");
 
         if (ERC165CheckerUpgradeable.supportsInterface(nfts[_nftIndex].contractAddr, 0xd9b67a26)){
             bytes memory data;
@@ -351,12 +351,12 @@ contract Converter is IConverter, IProxyTransaction, Initializable, ERC1155Recei
     }
 
     /**
-     * @dev implements the proxy transaction used by {ConverterTimeLock-executeTransaction}
+     * @dev implements the proxy transaction used by {VaultTimeLock-executeTransaction}
      */
     function forwardCall(address target, uint256 value, bytes calldata callData) external override payable returns (bool success, bytes memory returnData) {
-        require(target != address(factory), "Converter: No proxy transactions calling factory allowed");
-        require(target != address(factory.moon()), "Converter: No proxy transactions calling unic allowed");  // EXCLUDE
-        require(msg.sender == converterTimeLock, "Converter: Caller is not the converterTimeLock contract");
+        require(target != address(factory), "Vault: No proxy transactions calling factory allowed");
+        require(target != address(factory.moon()), "Vault: No proxy transactions calling unic allowed");  // EXCLUDE
+        require(msg.sender == vaultTimeLock, "Vault: Caller is not the vaultTimeLock contract");
         return target.call{value: value}(callData);
     }
 

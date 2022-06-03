@@ -1,8 +1,8 @@
 pragma solidity 0.6.12;
 
-import "./interfaces/IConverter.sol";
+import "./interfaces/IVault.sol";
 import './interfaces/IMoonFactory.sol';
-import './interfaces/IMoonConverterProxyTransactionFactory.sol';
+import './interfaces/IMoonVaultProxyTransactionFactory.sol';
 import "@openzeppelin/contracts-upgradeable/math/SafeMathUpgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/proxy/Initializable.sol";
 import "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
@@ -14,8 +14,8 @@ contract MoonFactory is IMoonFactory, Initializable, OwnableUpgradeable {
     // Address that receives fees
     address public override feeTo;
 
-    // Address of the converter implementation used for cheap clones
-    address public override converterImplementation;
+    // Address of the vault implementation used for cheap clones
+    address public override vaultImplementation;
 
     // Address that gets to set the feeTo address
     address public override feeToSetter;
@@ -85,25 +85,25 @@ contract MoonFactory is IMoonFactory, Initializable, OwnableUpgradeable {
         require(bytes(symbol).length < 16, 'MoonFactory: MAX TICKER');
 
         address issuer = msg.sender;
-        address converter = deployMinimal(
-            converterImplementation,
+        address vault = deployMinimal(
+            vaultImplementation,
             abi.encodeWithSignature("initialize(string,string,address,address)", name, symbol, issuer, address(this), crowdfundingMode)
         );
-        address converterGovernorAlpha;
+        address vaultGovernorAlpha;
         if (enableProxyTransactions) {
-            address converterTimeLock;
-            (converterGovernorAlpha, converterTimeLock) = IMoonConverterProxyTransactionFactory(proxyTransactionFactory).createProxyTransaction(converter, issuer);
-            IConverter(converter).setConverterTimeLock(converterTimeLock); 
-            getGovernorAlpha[converter] = converterGovernorAlpha;
+            address vaultTimeLock;
+            (vaultGovernorAlpha, vaultTimeLock) = IMoonVaultProxyTransactionFactory(proxyTransactionFactory).createProxyTransaction(vault, issuer);
+            IVault(vault).setVaultTimeLock(vaultTimeLock); 
+            getGovernorAlpha[vault] = vaultGovernorAlpha;
         }
         // Populate mapping
-        getMoonToken[converter] = moonTokens.length;
+        getMoonToken[vault] = moonTokens.length;
         // Add to list
-        moonTokens.push(converter);
-        IERC20(moon).approve(converter, airdropAmount); //remove
-        emit TokenCreated(msg.sender, converter);
+        moonTokens.push(vault);
+        IERC20(moon).approve(vault, airdropAmount); //remove
+        emit TokenCreated(msg.sender, vault);
 
-        return (converter, address(converterGovernorAlpha));
+        return (vault, address(vaultGovernorAlpha));
     }
     
     function toggleAirdrop() onlyOwner external override {
@@ -120,8 +120,8 @@ contract MoonFactory is IMoonFactory, Initializable, OwnableUpgradeable {
         feeToSetter = _feeToSetter;
     }
 
-    function setConverterImplementation(address _converterImplementation) onlyOwner external override {
-        converterImplementation = _converterImplementation;
+    function setVaultImplementation(address _vaultImplementation) onlyOwner external override {
+        vaultImplementation = _vaultImplementation;
     }
 
     function setAuctionHandler(address _auctionHandler) onlyOwner external override {

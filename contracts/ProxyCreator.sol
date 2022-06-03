@@ -4,7 +4,7 @@ import "@openzeppelin/contracts/math/SafeMath.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/token/ERC721/IERC721.sol";
 import "./interfaces/IMoonFactory.sol";
-import "./Converter.sol";
+import "./Vault.sol";
 
 contract ProxyCreator is Ownable {
     using SafeMath for uint256;
@@ -80,15 +80,15 @@ contract ProxyCreator is Ownable {
 
         IERC721(contractAddr).setApprovalForAll(moonToken, true);
         if(isPublic) {
-            Converter(moonToken).deposit(tokenIDs, amounts, triggerPrices, contractAddr);
+            Vault(moonToken).deposit(tokenIDs, amounts, triggerPrices, contractAddr);
         }
         else {
             require(whitelist[msg.sender], "ProxyCreator: User not part of whitelist");
-            Converter(moonToken).deposit(tokenIDs, amounts, triggerPrices, contractAddr);
+            Vault(moonToken).deposit(tokenIDs, amounts, triggerPrices, contractAddr);
         }
         
         if(reward != 0) {
-            Converter(moonToken).transfer(msg.sender, reward.mul(tokenIDs.length));
+            Vault(moonToken).transfer(msg.sender, reward.mul(tokenIDs.length));
         }
     }
 }
