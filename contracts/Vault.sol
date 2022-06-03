@@ -43,14 +43,21 @@ contract Converter is IConverter, IProxyTransaction, Initializable, ERC1155Recei
     address public issuer;
     uint256 public cap; //whatever the current supply of tokens is
     address public converterTimeLock;
+    IMoonFactory public factory;
+
+
+    ////////////////CROWDFUND////////////////////
     //whether or not this is currently in crowdfund stage
     bool public crowdfundingMode;
     //current crowdfund goal based on buy now prices
     uint256 public crowdfundGoal;
     //how much funded so far
     uint256 fundedSoFar;
-
-    IMoonFactory public factory;
+    //tracking how much stake users have in this crowdfund
+    mapping (address => uint) ethContributed;
+    mapping (address => uint) amountOwned;
+    //how much ETH the token is worth, (artificially) set upon creation by the crowdfund creator at $10 per token (must use chainlink price oracle)
+    uint moonTokenPrice;
 
     event Deposited(uint256[] tokenIDs, uint256[] amounts, uint256[] triggerPrices, address indexed contractAddr);
     event Refunded();
@@ -212,14 +219,15 @@ contract Converter is IConverter, IProxyTransaction, Initializable, ERC1155Recei
     }
 
     // Function that locks deposited NFTs as collateral and issues the uTokens to the issuer
-    //add step 2 to this function
+    //puts the entire token supply (aka cap) in th issuers wallet (**for non-crowdfund mode)
     function issue() external {
         require(msg.sender == issuer, "Converter: Only issuer can issue the tokens");
         require(active == false, "Converter: Token is already active");
+        require(crowdfundingMode == false, "Converter: Crowdfund is on");
 
         active = true;
         address feeTo = factory.feeTo();
-        uint256 feeAmount = 0;
+        uint256 feeAmount = 0;  
         if (feeTo != address(0)) {
             feeAmount = cap.div(factory.feeDivisor());
             _mint(feeTo, feeAmount);
@@ -253,6 +261,24 @@ contract Converter is IConverter, IProxyTransaction, Initializable, ERC1155Recei
         }
 
         emit Issued();
+    }
+
+    //function to temporarily set the moonToken price for crowdfunding
+    function setTokenPriceCrowdfunding() internal {
+
+    }
+
+    //handles minting new tokens for crowdfunding mode, whether crowdfund creator or anyone else
+    function purchaseCrowdfunding(uint amount) external payable {
+        require (msg.value >= amount*moonTokenPrice);
+        require (crowdfundingMode == true, "Converter: Crowdfund is not on");
+
+        //don't forget to add paying fees here
+        //also more require statements, and emit events
+
+        amountOwned[msg.sender] += amount;
+        ethContributed[msg.sender] += msg.value;//check values start initialized at 0?
+        _mint(msg.sender, amount);
     }
 
     // Function that allows NFTs to be refunded (prior to issue being called)

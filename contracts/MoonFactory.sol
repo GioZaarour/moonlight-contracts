@@ -27,7 +27,7 @@ contract MoonFactory is IMoonFactory, Initializable, OwnableUpgradeable {
 
     uint256 public override feeDivisor; 
 
-    uint256 public override moonTokenSupply; //not sure wha this is for
+    uint256 public override moonTokenSupply; //not sure what this is for
 
     // 200 Moon airdrop
     uint256 public override constant airdropAmount = 200 * 1e18;//REMOVE
