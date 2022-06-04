@@ -57,7 +57,7 @@ contract Vault is IVault, IProxyTransaction, Initializable, ERC1155ReceiverUpgra
     mapping (address => uint) ethContributed;
     mapping (address => uint) amountOwned;
     //how much ETH the token is worth, (artificially) set upon creation by the crowdfund creator at $10 per token (must use chainlink price oracle)
-    uint moonTokenPrice;
+    uint moonTokenCrowdfundingPrice;
 
     event Deposited(uint256[] tokenIDs, uint256[] amounts, uint256[] triggerPrices, address indexed contractAddr);
     event Refunded();
@@ -87,6 +87,10 @@ contract Vault is IVault, IProxyTransaction, Initializable, ERC1155ReceiverUpgra
         issuer = _issuer;
         factory = IMoonFactory(_factory);
         cap = factory.moonTokenSupply();
+
+        if (_crowdfundingMode) {
+            //set the moonTokenCrowdfundingPrice (a temporary price during crowdfund)= 10 dollars of ETH
+        }
         return true;
     }
 
@@ -263,14 +267,9 @@ contract Vault is IVault, IProxyTransaction, Initializable, ERC1155ReceiverUpgra
         emit Issued();
     }
 
-    //function to temporarily set the moonToken price for crowdfunding
-    function setTokenPriceCrowdfunding() internal {
-
-    }
-
     //handles minting new tokens for crowdfunding mode, whether crowdfund creator or anyone else
     function purchaseCrowdfunding(uint amount) external payable {
-        require (msg.value >= amount*moonTokenPrice);
+        require (msg.value >= amount*moonTokenCrowdfundingPrice);
         require (crowdfundingMode == true, "Vault: Crowdfund is not on");
 
         //don't forget to add paying fees here
