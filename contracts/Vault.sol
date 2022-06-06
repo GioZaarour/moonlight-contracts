@@ -13,6 +13,9 @@ import "./interfaces/IGetAuctionInfo.sol";
 import "./interfaces/IVault.sol";
 import "./abstract/ERC20VotesUpgradeable.sol";
 
+//for chainlink price feed
+import "@chainlink/contracts/src/v0.6/interfaces/AggregatorV3Interface.sol";
+
 contract Vault is IVault, IProxyTransaction, Initializable, ERC1155ReceiverUpgradeable, ERC20VotesUpgradeable, OwnableUpgradeable {
     using SafeMathUpgradeable for uint;
 
@@ -56,8 +59,14 @@ contract Vault is IVault, IProxyTransaction, Initializable, ERC1155ReceiverUpgra
     //tracking how much stake users have in this crowdfund
     mapping (address => uint) ethContributed;
     mapping (address => uint) amountOwned;
+    //chainlink aggregator interface for price feed
+    AggregatorV3Interface internal priceFeed;
     //how much ETH the token is worth, (artificially) set upon creation by the crowdfund creator at $10 per token (must use chainlink price oracle)
     uint moonTokenCrowdfundingPrice;
+    //crowdfund time tracking
+    uint duration;
+    uint startTime;
+    uint endTime;
 
     event Deposited(uint256[] tokenIDs, uint256[] amounts, uint256[] triggerPrices, address indexed contractAddr);
     event Refunded();
@@ -66,6 +75,8 @@ contract Vault is IVault, IProxyTransaction, Initializable, ERC1155ReceiverUpgra
     event TargetAdded(uint256[] tokenIDs, uint256[] amounts, uint256[] buyNowPrices, address indexed contractAddr);
     event UpdatedGoal(uint256 newGoal);
     event BuyPriceUpdate(uint256[] indexed targetNftIndex, uint[] buyNowPrices);
+    event PurchasedCrowdfund(address indexed buyer, uint256 amount);
+    event WithdrawnCrowdfund(address indexed user);
 
     bytes private constant VALIDATOR = bytes('JCMY');
 
@@ -74,7 +85,8 @@ contract Vault is IVault, IProxyTransaction, Initializable, ERC1155ReceiverUpgra
         string memory symbol,
         address _issuer,
         address _factory, 
-        bool _crowdfundingMode
+        bool _crowdfundingMode, 
+        uint _duration
     )
         public
         initializer
@@ -89,9 +101,34 @@ contract Vault is IVault, IProxyTransaction, Initializable, ERC1155ReceiverUpgra
         cap = factory.moonTokenSupply();
 
         if (_crowdfundingMode) {
-            //set the moonTokenCrowdfundingPrice (a temporary price during crowdfund)= 10 dollars of ETH
+            duration = _duration;
+            startTime = getBlockTimestamp();
+            endTime = startTime.add(duration);
+            /**
+            * Network: Kovan
+            * Aggregator: ETH/USD
+            * Address: 0x9326BFA02ADD2366b30bacB125260Af641031331
+            * set the price feed. change to eth mainnet after testing is done
+            */
+            priceFeed = AggregatorV3Interface(0x9326BFA02ADD2366b30bacB125260Af641031331);
+            uint usdPrice = 10;
+
+            //set the moonToken CrowdfundingPrice (a temporary price during crowdfund)= 10 dollars of ETH
+            moonTokenCrowdfundingPrice = ( usdPrice.div( uint(getLatestPrice()).div(10**8) ) ) * (10**18); //convert ether to wei by * 10^18
         }
+
         return true;
+    }
+
+    function getLatestPrice() public view returns (int) {
+        (
+            /*uint80 roundID*/,
+            int price,
+            /*uint startedAt*/,
+            /*uint timeStamp*/,
+            /*uint80 answeredInRound*/
+        ) = priceFeed.latestRoundData();
+        return price;
     }
 
     function burn(address _account, uint256 _amount) public {
@@ -185,7 +222,7 @@ contract Vault is IVault, IProxyTransaction, Initializable, ERC1155ReceiverUpgra
         //post-MVP: automatically update buy prices here, then make setBuyNowPrices() as onlyOwner
 
         for (uint8 i = 0; i < targetNFTIndex; i++) {
-            crowdfundGoal += targetNfts[i].buyNowPrice; //holy shit github copilot is amazing
+            crowdfundGoal += targetNfts[i].buyNowPrice;
         }
         emit UpdatedGoal(crowdfundGoal);
 
@@ -269,15 +306,48 @@ contract Vault is IVault, IProxyTransaction, Initializable, ERC1155ReceiverUpgra
 
     //handles minting new tokens for crowdfunding mode, whether crowdfund creator or anyone else
     function purchaseCrowdfunding(uint amount) external payable {
-        require (msg.value >= amount*moonTokenCrowdfundingPrice);
+        require (msg.value >= amount.mul(moonTokenCrowdfundingPrice) /* plus fees*/, "Vault: Not enough ETH sent");
         require (crowdfundingMode == true, "Vault: Crowdfund is not on");
+        require(active == false, "Vault: Token is already active");
+        require(getBlockTimestamp() < endTime, "Vault: Crowdfund has terminated");
 
         //don't forget to add paying fees here
-        //also more require statements, and emit events
 
         amountOwned[msg.sender] += amount;
-        ethContributed[msg.sender] += msg.value;//check values start initialized at 0?
+        ethContributed[msg.sender] += msg.value /* minus fee*/; //**check values start initialized at 0?**
         _mint(msg.sender, amount);
+
+        fundedSoFar += msg.value /* minus fee */;
+
+        emit PurchasedCrowdfund(msg.sender, amount);
+    }
+
+    //need backend time tracker to check progress status when duration ends and then notify users to withdraw if goal is not reached by then
+    function withdrawCrowdfunding() external {
+        require(amountOwned[msg.sender] > 0, "Vault: You have no tokens to withdraw");
+        require(crowdfundingMode == true, "Vault: Crowdfund is not on");
+        require(getBlockTimestamp() > endTime, "Vault: Crowdfund has not terminated");
+        require(fundedSoFar < crowdfundGoal, "Vault: Crowdfund has not failed");
+
+        super._burn(msg.sender, amountOwned[msg.sender]); //burn their tokens
+        msg.sender.transfer(ethContributed[msg.sender]); //send them back their ETH
+
+        //update ethContributed and amountOwned for msg.sender
+        amountOwned[msg.sender] = 0;
+        ethContributed[msg.sender] = 0;
+
+        //emit event
+        emit WithdrawnCrowdfund(msg.sender);
+    } 
+
+    //need some frontend/backend progress tracker (funded so far/goal) to be able to call this function on time
+    //only call this function when funded so far > goal
+    function crowdfundSuccess() external {
+        require (crowdfundingMode == true, "Vault: Crowdfund is not on");
+        require (fundedSoFar >= crowdfundGoal, "Vault: Crowdfund has not succeeded");
+
+        //set all the variables to stop the crowdfund phase and prepare for NFT purchase
+        //emit event
     }
 
     // Function that allows NFTs to be refunded (prior to issue being called)

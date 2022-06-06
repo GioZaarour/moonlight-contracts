@@ -38,6 +38,8 @@ contract MoonFactory is IMoonFactory, Initializable, OwnableUpgradeable {
 
     address public override proxyTransactionFactory;
 
+    uint public crowdfundDuration;
+
     mapping(address => uint) public override getMoonToken; //maps address to the index of the moonToken in the moonTokens array
 
     mapping(address => address) public override getGovernorAlpha;
@@ -63,7 +65,8 @@ contract MoonFactory is IMoonFactory, Initializable, OwnableUpgradeable {
         uint256 _feeDivisor,
         uint256 _moonTokenSupply,
         address _moon,
-        address _proxyTransactionFactory
+        address _proxyTransactionFactory, 
+        uint _crowdfundDuration
     ) public initializer {
         require(_feeToSetter != address(0) && _moon != address(0), "Invalid address");
         __Ownable_init();
@@ -73,6 +76,7 @@ contract MoonFactory is IMoonFactory, Initializable, OwnableUpgradeable {
         moon = _moon;
         proxyTransactionFactory = _proxyTransactionFactory;
         airdropEnabled = false;
+        crowdfundDuration = _crowdfundDuration;
     }
 
     function createMoonToken(
@@ -87,7 +91,7 @@ contract MoonFactory is IMoonFactory, Initializable, OwnableUpgradeable {
         address issuer = msg.sender;
         address vault = deployMinimal(
             vaultImplementation,
-            abi.encodeWithSignature("initialize(string,string,address,address)", name, symbol, issuer, address(this), crowdfundingMode)
+            abi.encodeWithSignature("initialize(string,string,address,address)", name, symbol, issuer, address(this), crowdfundingMode, crowdfundDuration)
         );
         address vaultGovernorAlpha;
         if (enableProxyTransactions) {
@@ -118,6 +122,10 @@ contract MoonFactory is IMoonFactory, Initializable, OwnableUpgradeable {
     function setFeeToSetter(address _feeToSetter) external override {
         require(msg.sender == feeToSetter, 'Moon: FORBIDDEN');
         feeToSetter = _feeToSetter;
+    }
+
+    function setCrowdfundDuration(uint _crowdfundDuration) external onlyOwner {
+        crowdfundDuration = _crowdfundDuration;
     }
 
     function setVaultImplementation(address _vaultImplementation) onlyOwner external override {
