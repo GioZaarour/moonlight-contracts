@@ -28,7 +28,7 @@ contract Vault is IVault, IProxyTransaction, Initializable, ERC1155ReceiverUpgra
     }
 
     mapping(uint256 => TargetNft) public targetNfts;
-    uint256 public targetNFTIndex = 0;
+    uint256 public targetNFTIndex;
 
     // List of NFTs that have been deposited
     struct NFT {
@@ -40,14 +40,13 @@ contract Vault is IVault, IProxyTransaction, Initializable, ERC1155ReceiverUpgra
 
     mapping(uint256 => NFT) public nfts;
     // Current index and length of nfts
-    uint256 public currentNFTIndex = 0;
+    uint256 public currentNFTIndex;
     // If active, NFTs can’t be withdrawn
-    bool public active = false;
+    bool public active; //default in solidity is false
     address public issuer;
     uint256 public cap; //whatever the current supply of tokens is
     address public vaultTimeLock;
     IMoonFactory public factory;
-
 
     ////////////////CROWDFUND////////////////////
     //whether or not this is currently in crowdfund stage
@@ -55,28 +54,34 @@ contract Vault is IVault, IProxyTransaction, Initializable, ERC1155ReceiverUpgra
     //current crowdfund goal based on buy now prices
     uint256 public crowdfundGoal;
     //how much funded so far
-    uint256 fundedSoFar;
+    uint256 public fundedSoFar;
     //tracking how much stake users have in this crowdfund
-    mapping (address => uint) ethContributed;
-    mapping (address => uint) amountOwned;
+    mapping (address => uint) public ethContributed;
+    mapping (address => uint) public amountOwned;
+    //tracking how much contribution fees have been collected to the vault
+    uint256 contributionFees;
     //chainlink aggregator interface for price feed
     AggregatorV3Interface internal priceFeed;
-    //how much ETH the token is worth, (artificially) set upon creation by the crowdfund creator at $10 per token (must use chainlink price oracle)
-    uint moonTokenCrowdfundingPrice;
+    //how much ETH the crowdfund token is worth, (artificially) set upon creation by the crowdfund creator at $10 per token (must use chainlink price oracle)
+    uint public moonTokenCrowdfundingPrice;
     //crowdfund time tracking
-    uint duration;
-    uint startTime;
-    uint endTime;
+    uint public duration;
+    uint public startTime;
+    uint public endTime;
 
     event Deposited(uint256[] tokenIDs, uint256[] amounts, uint256[] triggerPrices, address indexed contractAddr);
     event Refunded();
     event Issued();
     event TriggerPriceUpdate(uint256[] indexed nftIndex, uint[] price);
-    event TargetAdded(uint256[] tokenIDs, uint256[] amounts, uint256[] buyNowPrices, address indexed contractAddr);
+    event TargetAdded(uint256[] tokenIDs, uint256[] amounts, uint256[] buyNowPrices, address[] indexed contractAddr);
+    event TargetUpdated(uint256 indexed targetNftIndex, uint256 tokenID, uint256 amount, address indexed contractAddr);
     event UpdatedGoal(uint256 newGoal);
     event BuyPriceUpdate(uint256[] indexed targetNftIndex, uint[] buyNowPrices);
     event PurchasedCrowdfund(address indexed buyer, uint256 amount);
     event WithdrawnCrowdfund(address indexed user);
+    event CrowdfundSuccess();
+    event BoughtNfts();
+    event TerminatedCrowdfund();
 
     bytes private constant VALIDATOR = bytes('JCMY');
 
@@ -86,7 +91,7 @@ contract Vault is IVault, IProxyTransaction, Initializable, ERC1155ReceiverUpgra
         address _issuer,
         address _factory, 
         bool _crowdfundingMode, 
-        uint _duration
+        uint256 _supply
     )
         public
         initializer
@@ -96,14 +101,12 @@ contract Vault is IVault, IProxyTransaction, Initializable, ERC1155ReceiverUpgra
         __Ownable_init();
         __ERC20_init(name, symbol);
         crowdfundingMode = _crowdfundingMode;
-        issuer = _issuer;
+        issuer = _issuer; //issuer is curator
         factory = IMoonFactory(_factory);
-        cap = factory.moonTokenSupply();
 
         if (_crowdfundingMode) {
-            duration = _duration;
             startTime = getBlockTimestamp();
-            endTime = startTime.add(duration);
+            endTime = startTime.add(factory.crowdfundDuration());
             /**
             * Network: Kovan
             * Aggregator: ETH/USD
@@ -111,10 +114,12 @@ contract Vault is IVault, IProxyTransaction, Initializable, ERC1155ReceiverUpgra
             * set the price feed. change to eth mainnet after testing is done
             */
             priceFeed = AggregatorV3Interface(0x9326BFA02ADD2366b30bacB125260Af641031331);
-            uint usdPrice = 10;
 
             //set the moonToken CrowdfundingPrice (a temporary price during crowdfund)= 10 dollars of ETH
-            moonTokenCrowdfundingPrice = ( usdPrice.div( uint(getLatestPrice()).div(10**8) ) ) * (10**18); //convert ether to wei by * 10^18
+            moonTokenCrowdfundingPrice = (uint256)(10**18).mul( factory.usdCrowdfundingPrice().div( uint(getLatestPrice()).div(10**8) ) ); //convert ether to wei by * 10^18
+        }
+        else {
+            cap = _supply;
         }
 
         return true;
@@ -147,6 +152,8 @@ contract Vault is IVault, IProxyTransaction, Initializable, ERC1155ReceiverUpgra
         require(msg.sender == issuer, "Vault: Only issuer can set trigger prices");
         require(_nftIndex.length <= 50, "Vault: A maximum of 50 trigger prices can be set at once");
         require(_nftIndex.length == _triggerPrices.length, "Array length mismatch");
+        require(crowdfundingMode == false, "Vault: Crowdfund is on");
+
         for (uint8 i = 0; i < 50; i++) {
             if (_nftIndex.length == i) {
                 break;
@@ -167,13 +174,30 @@ contract Vault is IVault, IProxyTransaction, Initializable, ERC1155ReceiverUpgra
     //can add multiple NFTs with this but only if they come from the same collection (contractAddr)
     //otherwise will have to call this func multiple times for different NFT contracts
     //notify user that buy now price is for the whole bundle
-    function addTargetNft(uint256[] calldata tokenIDs, uint256[] calldata amounts, uint256[] calldata buyNowPrices, address contractAddr) external {
+    function addTargetNft(uint256[] calldata tokenIDs, uint256[] calldata amounts, uint256[] calldata buyNowPrices, address[] calldata contractAddr) external {
         require(msg.sender == issuer, "Vault: Only issuer can add target NFTs");
         require(tokenIDs.length <= 50, "Vault: A maximum of 50 tokens can be added in one go");
         require(tokenIDs.length > 0, "Vault: You must specify at least one token ID");
         require(tokenIDs.length == buyNowPrices.length, "Array length mismatch");
         require(crowdfundingMode == true, "Vault: Crowdfund is not on");
+
+        for (uint8 i = 0; i < 50; i++){
+            if (i == tokenIDs.length) {
+                break;
+            }
+
+            //if it is an ERC1155 we will take the amounts[] they give us
+            if(ERC165CheckerUpgradeable.supportsInterface(contractAddr[i], 0xd9b67a26)) {
+                targetNfts[targetNFTIndex++] = TargetNft(contractAddr[i], tokenIDs[i], amounts[i], buyNowPrices[i]);
+            }
+            //else it is ERC721 and amounts will always be 1
+            else {
+                targetNfts[targetNFTIndex++] = TargetNft(contractAddr[i], tokenIDs[i], 1, buyNowPrices[i]);
+            }
+
+        }
         
+        /*
         //if it is an ERC1155 we will take the amounts[] they give us
         if (ERC165CheckerUpgradeable.supportsInterface(contractAddr, 0xd9b67a26)){
             for (uint8 i = 0; i < 50; i++){
@@ -191,7 +215,7 @@ contract Vault is IVault, IProxyTransaction, Initializable, ERC1155ReceiverUpgra
                 }
                 targetNfts[targetNFTIndex++] = TargetNft(contractAddr, tokenIDs[i], 1, buyNowPrices[i]);
             }
-        }
+        } */
         
         //update the crowdfund goal
         updateCrowdfundGoal();
@@ -199,6 +223,7 @@ contract Vault is IVault, IProxyTransaction, Initializable, ERC1155ReceiverUpgra
     }
 
     function setBuyNowPrices(uint256[] calldata _targetNftIndex, uint256[] calldata _buyNowPrices) external {
+        //important note that for erc1155, buy-now price is of the whole batch (of amount)
         //post-MVP: chainlink => opensea API. update periodically
         require(msg.sender == issuer, "Vault: Only issuer can set buy prices");
         require(_targetNftIndex.length <= 50, "Vault: A maximum of 50 buy prices can be set at once");
@@ -218,6 +243,7 @@ contract Vault is IVault, IProxyTransaction, Initializable, ERC1155ReceiverUpgra
     //call this internally whenever buy prices change
     function updateCrowdfundGoal() public {
         require(crowdfundingMode == true, "Vault: Crowdfund is not on");
+        crowdfundGoal = 0;
 
         //post-MVP: automatically update buy prices here, then make setBuyNowPrices() as onlyOwner
 
@@ -229,6 +255,7 @@ contract Vault is IVault, IProxyTransaction, Initializable, ERC1155ReceiverUpgra
     }
 
     // deposits an nft using the transferFrom action of the NFT contractAddr
+    //can only do from one contract address at a time because transfer function is either ERC721 or ERC1155
     function deposit(uint256[] calldata tokenIDs, uint256[] calldata amounts, uint256[] calldata triggerPrices, address contractAddr) external {
         require(msg.sender == issuer, "Vault: Only issuer can deposit");
         require(tokenIDs.length <= 50, "Vault: A maximum of 50 tokens can be deposited in one go");
@@ -259,8 +286,8 @@ contract Vault is IVault, IProxyTransaction, Initializable, ERC1155ReceiverUpgra
         emit Deposited(tokenIDs, amounts, triggerPrices, contractAddr);
     }
 
-    // Function that locks deposited NFTs as collateral and issues the uTokens to the issuer
-    //puts the entire token supply (aka cap) in th issuers wallet (**for non-crowdfund mode)
+    // Function that locks deposited NFTs as collateral and issues the moonTokens to the issuer
+    //puts the entire token supply (the "cap") in th issuers wallet (**for non-crowdfund mode)
     function issue() external {
         require(msg.sender == issuer, "Vault: Only issuer can issue the tokens");
         require(active == false, "Vault: Token is already active");
@@ -277,56 +304,65 @@ contract Vault is IVault, IProxyTransaction, Initializable, ERC1155ReceiverUpgra
         uint256 amount = cap - feeAmount;
         _mint(issuer, amount);
 
-        if (!factory.airdropEnabled()) {
-            emit Issued();
-            return;
-        }
-
-        //EXCLUDE airdrop part
-        if (!factory.receivedAirdrop(msg.sender)) {
-            bool airdropEligible = false;
-            for (uint8 i = 0; i < currentNFTIndex; i++) {
-                if (factory.isAirdropCollection(nfts[i].contractAddr)) {
-                    airdropEligible = true;
-                    break;
-                }
-            }
-            if (airdropEligible) {
-                if (IERC20Upgradeable(factory.moon()).balanceOf(address(factory)) < factory.airdropAmount()) { //EXCLUDE
-                    emit Issued();
-                    return;
-                }
-                factory.setAirdropReceived(msg.sender);
-                IERC20Upgradeable(factory.moon()).transferFrom(address(factory), msg.sender, factory.airdropAmount()); //EXCLUDE
-            }
-        }
-
         emit Issued();
     }
 
     //handles minting new tokens for crowdfunding mode, whether crowdfund creator or anyone else
     function purchaseCrowdfunding(uint amount) external payable {
-        require (msg.value >= amount.mul(moonTokenCrowdfundingPrice) /* plus fees*/, "Vault: Not enough ETH sent");
+        uint beforeFees = amount.mul(moonTokenCrowdfundingPrice);
+        uint fee = beforeFees.div(factory.crowdfundFeeDivisor());
+        uint requiredAmount = beforeFees.add(fee);
+
+        require (msg.value >= requiredAmount, "Vault: Not enough ETH sent");
         require (crowdfundingMode == true, "Vault: Crowdfund is not on");
         require(active == false, "Vault: Token is already active");
         require(getBlockTimestamp() < endTime, "Vault: Crowdfund has terminated");
 
-        //don't forget to add paying fees here
+        //first case: conbribution balance (including this contribution) is less than or equal to the crowdfundgoal
+        if ( address(this).balance.sub(contributionFees) <= crowdfundGoal) {
+            _mint(msg.sender, amount);
 
-        amountOwned[msg.sender] += amount;
-        ethContributed[msg.sender] += msg.value /* minus fee*/; //**check values start initialized at 0?**
-        _mint(msg.sender, amount);
+            amountOwned[msg.sender] = amountOwned[msg.sender].add(amount);
+            ethContributed[msg.sender] = ethContributed[msg.sender].add(msg.value);
+            //increment total fees accrued in contract
+            contributionFees = contributionFees.add(fee);
+            fundedSoFar = fundedSoFar.add( msg.value.sub(fee) );
 
-        fundedSoFar += msg.value /* minus fee */;
+            emit PurchasedCrowdfund(msg.sender, amount);
+        }
+        //second case: this message's value made money in contract exceed the crowdfund goal
+        else {
+            // If the contribution balance before this contribution was already greater than the funding cap, then we should revert immediately.
+            require(
+                fundedSoFar < crowdfundGoal,
+                "Crowdfund: Funding cap already reached"
+            );
+            // Otherwise, the contribution helped us reach the crowdfund goal. We should
+            // take what we can until the funding cap is reached, and refund the rest.
+            uint256 eligibleEth = crowdfundGoal - fundedSoFar;
+            // Otherwise, we process the contribution as if it were the minimal amount.
+            uint256 properAmount = eligibleEth.div(moonTokenCrowdfundingPrice);
+            _mint(msg.sender, properAmount);
 
-        emit PurchasedCrowdfund(msg.sender, amount);
+            amountOwned[msg.sender] = amountOwned[msg.sender].add(properAmount);
+            ethContributed[msg.sender] = ethContributed[msg.sender].add(eligibleEth.add(fee));
+            //increment total fees accrued in contract
+            contributionFees = contributionFees.add(fee);
+            fundedSoFar = fundedSoFar.add( eligibleEth );
+
+            // Refund the sender with their contribution (e.g. 2.5 minus the diff - e.g. 1.5 = 1 ETH)
+            msg.sender.transfer(msg.value.sub(eligibleEth.sub(fee)));
+
+            emit PurchasedCrowdfund(msg.sender, properAmount);
+        }
     }
 
+    //users withdraw their contributions if the crowdfund ended or was terminated
     //need backend time tracker to check progress status when duration ends and then notify users to withdraw if goal is not reached by then
     function withdrawCrowdfunding() external {
-        require(amountOwned[msg.sender] > 0, "Vault: You have no tokens to withdraw");
+        require(ethContributed[msg.sender] > 0, "Vault: You have no ETH to withdraw");
         require(crowdfundingMode == true, "Vault: Crowdfund is not on");
-        require(getBlockTimestamp() > endTime, "Vault: Crowdfund has not terminated");
+        require(getBlockTimestamp() > endTime, "Vault: Crowdfund has not ended yet");
         require(fundedSoFar < crowdfundGoal, "Vault: Crowdfund has not failed");
 
         super._burn(msg.sender, amountOwned[msg.sender]); //burn their tokens
@@ -340,6 +376,35 @@ contract Vault is IVault, IProxyTransaction, Initializable, ERC1155ReceiverUpgra
         emit WithdrawnCrowdfund(msg.sender);
     } 
 
+    //function to call when target NFT is delisted or bought before crowdfunding succeeds
+    //or if the issuer wants to terminate for any other reason
+    function terminateCrowdfund() external {
+        require(msg.sender == issuer || msg.sender == factory.owner(), "Vault: terminateCrowdfund(): only issuer or owner can terminate");
+        require(crowdfundingMode == true, "Vault: terminateCrowdfund(): Crowdfund is not on");
+
+        //this is the best way to stop people from calling purchaseCrowdfunding() because if we set 
+        //crowdfundingMode = false then the contract will reject any calls to withdrawCrowdfunding()
+        endTime = 0;
+        //now need to prompt users via notification to withdrawCrowdfunding()
+        emit TerminatedCrowdfund();
+    }
+
+    //another alternative if the target NFT is delisted or bought before crowdfunding succeeds
+    function updateTarget(uint _targetNftIndex, uint256 _tokenID, uint256 _amount, uint256 buyNowPrice, address _contractAddr) external {
+        require(msg.sender == issuer || msg.sender == factory.owner(), "Vault: updateTargets(): only issuer or owner can update");
+        require(crowdfundingMode == true, "Vault: updateTargets(): Crowdfund is not on");
+        require(getBlockTimestamp() < endTime, "Vault: updateTargets(): Crowdfund has ended");
+
+        //update targetNFTs
+        targetNfts[_targetNftIndex].tokenId = _tokenID;
+        targetNfts[_targetNftIndex].amount = _amount;
+        targetNfts[_targetNftIndex].buyNowPrice = buyNowPrice;
+        targetNfts[_targetNftIndex].nftContract = _contractAddr;
+
+        updateCrowdfundGoal();
+        emit TargetUpdated(_targetNftIndex, _tokenID, _amount, _contractAddr);
+    }
+
     //need some frontend/backend progress tracker (funded so far/goal) to be able to call this function on time
     //only call this function when funded so far > goal
     function crowdfundSuccess() external {
@@ -347,13 +412,94 @@ contract Vault is IVault, IProxyTransaction, Initializable, ERC1155ReceiverUpgra
         require (fundedSoFar >= crowdfundGoal, "Vault: Crowdfund has not succeeded");
 
         //set all the variables to stop the crowdfund phase and prepare for NFT purchase
+        crowdfundingMode = false;
+        active = true;
+        cap = totalSupply();
+
+        address feeTo = factory.feeTo();
+        //send all ETH crowdfunding fees to moonlight
+        if (feeTo != address(0)) {
+            payable(feeTo).transfer(contributionFees);
+        }
+
         //emit event
+        emit CrowdfundSuccess();
+
+        //call buy function
+        betaBuyNfts();
     }
+
+    //this releases funds to the crowdfund creator so they can manually make the purchase(s)
+    //post-MVP remove this for buyNftsCrowdfunding()
+    //obviously this is a bad function since curator can run off with funds, but for beta, moonlight will be the only curator -- take out the funds, buy NFT, and deposit it into vault
+    function betaBuyNfts() internal {
+        require (fundedSoFar >= crowdfundGoal && crowdfundGoal != 0, "Vault: Crowdfund was never on or has not succeeded yet");
+        require(active == true, "Vault: Token is not active");
+
+        payable(issuer).transfer(address(this).balance);
+
+        //emit bought event
+        emit BoughtNfts();
+    }
+
+    /**
+     * Buy the target NFT(s) by calling target NFT's contract with calldata supplying value
+     * Emits a Bought event upon success; reverts otherwise
+     */
+     /*
+     //make this capable of buying ALL the target NFTs ?
+    function buyNftsCrowdfunding(
+        uint256 _targetNFTIndex,
+        uint256 _value,
+        bytes calldata _calldata
+    ) public {
+        require (fundedSoFar >= crowdfundGoal && crowdfundGoal != 0, "Vault: Crowdfund was never on or has not succeeded yet");
+        require(active == true, "Vault: Token is not active");
+        // ensure the caller is issuer OR this contract
+        // ensure the the target NFT index is valid
+        // check that the _value being spent is not more than available in vault
+        // check that the value being spent is not zero
+        //check that the value being spent is less than or equal to the buy price of the NFT
+        
+        // require that the NFT is NOT owned by the Vault
+        require(
+            _getOwner(_targetNFTIndex) != address(this),
+            "PartyBuy::buy: own token before call"
+        );
+        // execute the calldata on the target contract
+        //figure out a way to verify that calldata is executing purchase of the correct token ID
+        (bool _success, bytes memory _returnData) = address(targetNfts[_targetNFTIndex].nftContract).call{value: _value}(_calldata);
+        // require that the external call succeeded
+        require(_success, string(_returnData));
+        // require that the NFT is owned by the Vault
+        require(
+            _getOwner(_targetNFTIndex) == address(this),
+            "PartyBuy::buy: failed to buy token"
+        );
+
+        //**ADD THE PURCHASED NFT TO nfts[] MAPPING
+
+        // emit Bought event
+        // **after purchase is done, make sure to track the new vault asset in nfts[] mapping
+    } */
+
+    //helper function to see who owns an NFT
+    /*
+    function _getOwner(uint _targetNFTIndex) internal view returns (address _owner) {
+        (bool _success, bytes memory _returnData) = address(targetNfts[_targetNFTIndex].nftContract)
+            .staticcall(abi.encodeWithSignature("ownerOf(uint256)", targetNfts[_targetNFTIndex].tokenId));
+        if (_success && _returnData.length > 0) {
+            _owner = abi.decode(_returnData, (address));
+            return _owner;
+        }
+    }
+    */
 
     // Function that allows NFTs to be refunded (prior to issue being called)
     function refund(address _to) external {
         require(!active, "Vault: Contract is already active - cannot refund");
         require(msg.sender == issuer, "Vault: Only issuer can refund");
+        require(crowdfundingMode == false, "Vault: refund: crowdfunding is on");
 
         // Only transfer maximum of 50 at a time to limit gas per call
         uint8 _i = 0;
@@ -424,7 +570,6 @@ contract Vault is IVault, IProxyTransaction, Initializable, ERC1155ReceiverUpgra
      */
     function forwardCall(address target, uint256 value, bytes calldata callData) external override payable returns (bool success, bytes memory returnData) {
         require(target != address(factory), "Vault: No proxy transactions calling factory allowed");
-        require(target != address(factory.moon()), "Vault: No proxy transactions calling unic allowed");  // EXCLUDE
         require(msg.sender == vaultTimeLock, "Vault: Caller is not the vaultTimeLock contract");
         return target.call{value: value}(callData);
     }

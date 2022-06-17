@@ -9,6 +9,8 @@ import "@openzeppelin/contracts-upgradeable/math/SafeMathUpgradeable.sol";
 abstract contract ERC20VotesUpgradeable is ERC20BurnableUpgradeable  {
     using SafeMathUpgradeable for uint256;
 
+    //GIO IMPLEMENT A CHECK IN DELEGATE THAT MAKES SURE CURRENT/PRIOR VOTES ARE BELOW 35% OF TOTAL SUPPLY
+
     // Copied and modified from YAM code:
     // https://github.com/yam-finance/yam-protocol/blob/master/contracts/token/YAMGovernanceStorage.sol
     // https://github.com/yam-finance/yam-protocol/blob/master/contracts/token/YAMGovernance.sol

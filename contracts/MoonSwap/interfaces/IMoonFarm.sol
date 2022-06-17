@@ -3,8 +3,8 @@ pragma solidity 0.6.12;
 
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 
-interface IUnicFarm {
-    function pendingUnic(uint256 _pid, address _user) external view returns (uint256);
+interface IMoonFarm {
+    function pendingMoon(uint256 _pid, address _user) external view returns (uint256);
 
     function deposit(uint256 _pid, uint256 _amount) external;
 

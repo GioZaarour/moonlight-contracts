@@ -14,19 +14,18 @@ interface IMoonFactory {
     function feeDivisor() external view returns (uint);
     function auctionHandler() external view returns (address);
     function moonTokenSupply() external view returns (uint);
-    function airdropAmount() external view returns (uint);
-    function airdropEnabled() external view returns (bool);
-    function moon() external view returns (address); //exclude
-    function isAirdropCollection(address collection) external view returns (bool);
-    function receivedAirdrop(address user) external view returns (bool);
     function owner() external view returns (address);
     function proxyTransactionFactory() external view returns (address);
+    function crowdfundDuration() external view returns (uint);
+    function crowdfundFeeDivisor() external view returns (uint);
+    function usdCrowdfundingPrice() external view returns (uint);
 
     function createMoonToken(
         string calldata name,
         string calldata symbol,
         bool enableProxyTransactions, 
-        bool crowdfundingMode
+        bool crowdfundingMode ,
+        uint256 supply
     ) external returns (address, address);
 
     function setFeeTo(address) external;
@@ -36,7 +35,4 @@ interface IMoonFactory {
     function setAuctionHandler(address) external;
     function setSupply(uint) external;
     function setProxyTransactionFactory(address _proxyTransactionFactory) external;
-    function setAirdropCollections(address[] calldata, bool) external;
-    function setAirdropReceived(address) external;
-    function toggleAirdrop() external;
 }

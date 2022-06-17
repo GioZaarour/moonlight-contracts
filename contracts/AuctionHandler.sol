@@ -15,6 +15,7 @@ contract AuctionHandler is Initializable, OwnableUpgradeable {
         uint endTime;
         address moonToken;
         uint256 nftIndexForMoonToken;
+        bool claimable;
         bool claimed;
     }
 
@@ -37,14 +38,14 @@ contract AuctionHandler is Initializable, OwnableUpgradeable {
     // moonToken address to vault balances
     mapping(address => uint256) public vaultBalances;
 
-    address public factory;
-    // 3 days
+    IMoonFactory public factory;
+    // 36 hours
     uint public duration;
-    // 105
+    // 105 = next bid must be 5% above top bid to be new top bid
     uint8 public minBidMultiplier;
-    // 5 minutes?
+    // 5 minutes
     uint public auctionExtension;
-    // 100 (1%)
+    // 50 (2%)
     uint8 public feeDivisor;
 
     address public feeToSetter;
@@ -69,7 +70,7 @@ contract AuctionHandler is Initializable, OwnableUpgradeable {
         require(_feeDivisor > 1, "Invalid fee divisor");
         require(_feeDivisor > uint256(100).div(uint256(100).mul(_minBidMultiplier).div(100).sub(100)), "Invalid fee vs multiplier");
         __Ownable_init();
-        factory = _factory;
+        factory = IMoonFactory(_factory);
         duration = _duration;
         minBidMultiplier = _minBidMultiplier;
         auctionExtension = _auctionExtension;
@@ -86,7 +87,10 @@ contract AuctionHandler is Initializable, OwnableUpgradeable {
         require(IMoonFactory(factory).getMoonToken(_moonToken) != 0 || IMoonFactory(factory).moonTokens(0) == _moonToken, 
             "AuctionHandler: moonToken contract must be valid");
         require(Vault(_moonToken).active(), "AuctionHandler: Can not bid on inactive moonToken");
+        //get the contract address and trigger price of the given NFT
         (address contractAddr, , , uint256 triggerPrice) = Vault(_moonToken).nfts(_nftIndexForMoonToken);
+        //verify that the vault is not in crowdfund
+        require(Vault(_moonToken).crowdfundingMode() == false, "AuctionHandler: newAuction: Can not bid on NFTs in crowdfunding mode");
         // Check that nft index exists on vault contract
         require(contractAddr != address(0), "AuctionHandler: NFT index must exist");
         // Check that bid meets reserve price
@@ -103,6 +107,7 @@ contract AuctionHandler is Initializable, OwnableUpgradeable {
                 endTime: auctionEndTime,
                 moonToken: _moonToken,
                 nftIndexForMoonToken: _nftIndexForMoonToken,
+                claimable: false,
                 claimed: false
             })
         );
@@ -158,10 +163,24 @@ contract AuctionHandler is Initializable, OwnableUpgradeable {
         emit BidRemoved(_auctionId, msg.sender);
     }
 
+    // after the auction ends, a proposer or the issuer must make a proposal to toggleClaimable() if they and the community want to sell the NFT
+    //if vote goes through, this function will be called and the NFT will be claimable
+    function toggleClaimable(uint256 _auctionId) public {
+        AuctionInfo storage thisAuction = auctionInfo[_auctionId];
+        //require that the sender is the vault's timelock or moonlight
+        //post-beta remove allowing the curator to call this function
+        require(msg.sender == Vault(thisAuction.moonToken).vaultTimeLock() || msg.sender == factory.owner() || msg.sender == Vault(thisAuction.moonToken).issuer(), "AuctionHandler::toggleClaimable : Only vault's timelock or moonlight can toggle claimable");
+        require(getBlockTimestamp() > thisAuction.endTime, "AuctionHandler::toggleClaimable : Auction duration must have ended");
+
+        thisAuction.claimable = !thisAuction.claimable;
+    }
+
+
     // Claim NFT if address is winning bidder
     function claim(uint256 _auctionId) public {
         AuctionInfo storage thisAuction = auctionInfo[_auctionId];
-        require(getBlockTimestamp() > thisAuction.endTime, "AuctionHandler: Auction is not over");
+        require(getBlockTimestamp() > thisAuction.endTime, "AuctionHandler: Auction or buffer period is not over");
+        require(thisAuction.claimable, "AuctionHandler: claim: Auction is not claimable");
         require(!thisAuction.claimed, "AuctionHandler: Already claimed");
         Bid memory topBid = bids[_auctionId];
         require(msg.sender == topBid.bidder, "AuctionHandler: Only winner can claim");
@@ -173,6 +192,7 @@ contract AuctionHandler is Initializable, OwnableUpgradeable {
         emit ClaimedNFT(_auctionId, topBid.bidder);
     }
 
+    //how a user can withdraw pro-rata shares of auction proceeds
     function burnAndRedeem(address _moonToken, uint256 _amount) public {
         require(vaultBalances[_moonToken] > 0, "AuctionHandler: No vault balance to redeem from");
 
@@ -193,7 +213,7 @@ contract AuctionHandler is Initializable, OwnableUpgradeable {
     }
 
     function setFactory(address _factory) public onlyOwner {
-        factory = _factory;
+        factory = IMoonFactory(_factory);
     }
 
     function setAuctionParameters(uint _duration, uint8 _minBidMultiplier, uint _auctionExtension, uint8 _feeDivisor) public onlyOwner {

@@ -25,28 +25,23 @@ contract MoonFactory is IMoonFactory, Initializable, OwnableUpgradeable {
 
     address public override auctionHandler;
 
+    //fee divisor taken on issuance of fractioanalized tokens (paid in moonToken)
     uint256 public override feeDivisor; 
 
-    uint256 public override moonTokenSupply; //not sure what this is for
+    //fee divisor taken on crowdfund contributions
+    uint256 public override crowdfundFeeDivisor;
 
-    // 200 Moon airdrop
-    uint256 public override constant airdropAmount = 200 * 1e18;//REMOVE
-
-    address public override moon;//REMOVE
-
-    bool public override airdropEnabled;//REMOVE
+    uint256 public override moonTokenSupply;
 
     address public override proxyTransactionFactory;
 
-    uint public crowdfundDuration;
+    uint public override crowdfundDuration;
+
+    uint public override usdCrowdfundingPrice;
 
     mapping(address => uint) public override getMoonToken; //maps address to the index of the moonToken in the moonTokens array
 
     mapping(address => address) public override getGovernorAlpha;
-
-    mapping(address => bool) public override isAirdropCollection;
-
-    mapping(address => bool) public override receivedAirdrop;
 
     event TokenCreated(address indexed caller, address indexed moonToken);
 
@@ -59,31 +54,32 @@ contract MoonFactory is IMoonFactory, Initializable, OwnableUpgradeable {
     }
 
     // Constructor just needs to know who gets to set feeTo address and default fee amount`
-
     function initialize(
         address _feeToSetter,
         uint256 _feeDivisor,
         uint256 _moonTokenSupply,
-        address _moon,
         address _proxyTransactionFactory, 
-        uint _crowdfundDuration
+        uint _crowdfundDuration, 
+        uint _crowdfundFeeDivisor,
+        uint _usdCrowdfundingPrice
     ) public initializer {
-        require(_feeToSetter != address(0) && _moon != address(0), "Invalid address");
+        require(_feeToSetter != address(0), "Invalid feeToSetter address");
         __Ownable_init();
         feeToSetter = _feeToSetter;
         feeDivisor = _feeDivisor;
         moonTokenSupply = _moonTokenSupply;
-        moon = _moon;
         proxyTransactionFactory = _proxyTransactionFactory;
-        airdropEnabled = false;
         crowdfundDuration = _crowdfundDuration;
+        crowdfundFeeDivisor = _crowdfundFeeDivisor;
+        usdCrowdfundingPrice = _usdCrowdfundingPrice;
     }
 
     function createMoonToken(
         string calldata name,
         string calldata symbol,
         bool enableProxyTransactions,
-        bool crowdfundingMode
+        bool crowdfundingMode ,
+        uint256 supply
     ) external override returns (address, address) {
         require(bytes(name).length < 32, 'MoonFactory: MAX NAME');
         require(bytes(symbol).length < 16, 'MoonFactory: MAX TICKER');
@@ -91,7 +87,7 @@ contract MoonFactory is IMoonFactory, Initializable, OwnableUpgradeable {
         address issuer = msg.sender;
         address vault = deployMinimal(
             vaultImplementation,
-            abi.encodeWithSignature("initialize(string,string,address,address)", name, symbol, issuer, address(this), crowdfundingMode, crowdfundDuration)
+            abi.encodeWithSignature("initialize(string,string,address,address)", name, symbol, issuer, address(this), crowdfundingMode, supply)
         );
         address vaultGovernorAlpha;
         if (enableProxyTransactions) {
@@ -104,14 +100,9 @@ contract MoonFactory is IMoonFactory, Initializable, OwnableUpgradeable {
         getMoonToken[vault] = moonTokens.length;
         // Add to list
         moonTokens.push(vault);
-        IERC20(moon).approve(vault, airdropAmount); //remove
         emit TokenCreated(msg.sender, vault);
 
         return (vault, address(vaultGovernorAlpha));
-    }
-    
-    function toggleAirdrop() onlyOwner external override {
-        airdropEnabled = true;
     }
 
     function setFeeTo(address _feeTo) external override {
@@ -126,6 +117,14 @@ contract MoonFactory is IMoonFactory, Initializable, OwnableUpgradeable {
 
     function setCrowdfundDuration(uint _crowdfundDuration) external onlyOwner {
         crowdfundDuration = _crowdfundDuration;
+    }
+
+    function setCrowdfundFeeDivisor(uint _crowdfundFeeDivisor) external onlyOwner {
+        crowdfundFeeDivisor = _crowdfundFeeDivisor;
+    }
+
+    function setUsdCrowdfundingPrice(uint _usdCrowdfundingPrice) external onlyOwner {
+        usdCrowdfundingPrice = _usdCrowdfundingPrice;
     }
 
     function setVaultImplementation(address _vaultImplementation) onlyOwner external override {
@@ -146,18 +145,6 @@ contract MoonFactory is IMoonFactory, Initializable, OwnableUpgradeable {
 
     function setProxyTransactionFactory(address _proxyTransactionFactory) onlyOwner external override {
         proxyTransactionFactory = _proxyTransactionFactory;
-    }
-
-    function setAirdropCollections(address[] calldata _airdrops, bool _isOn) onlyOwner external override {
-        for (uint8 i = 0; i < _airdrops.length; i++) {
-            isAirdropCollection[_airdrops[i]] = _isOn;
-        }
-    }
-
-    function setAirdropReceived(address _user) external override {
-        require(getMoonToken[msg.sender] != 0 || moonTokens[0] == msg.sender,
-            "sender must be vault");
-        receivedAirdrop[_user] = true;
     }
 
     // Adapted from https://github.com/OpenZeppelin/openzeppelin-sdk/blob/v2.6.0/packages/lib/contracts/upgradeability/ProxyFactory.sol#L18

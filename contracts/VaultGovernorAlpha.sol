@@ -18,7 +18,7 @@ import "./VaultGovernorAlphaConfig.sol";
 contract VaultGovernorAlpha {
     /// @notice The name of this contract
     // XXX: string public constant name = "Compound Governor Alpha";
-    string public constant name = "moonToken Governor Alpha";
+    string public constant name = "MoonToken Governor Alpha";
 
     /// @notice The number of votes in support of a proposal required in order for a quorum to be reached and for a vote to succeed
     // XXX: function quorumVotes() public pure returns (uint) { return 400000e18; } // 400,000 = 4% of Comp
@@ -153,7 +153,7 @@ contract VaultGovernorAlpha {
     constructor(address timelock_, address _moonToken, address guardian_, address _config) public {
         timelock = TimeLockInterface(timelock_);
         moonToken = Vault(_moonToken);
-        guardian = guardian_;
+        guardian = guardian_; //guardian is the vault curator
         config = VaultGovernorAlphaConfig(_config);
     }
 

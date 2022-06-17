@@ -1,8 +1,8 @@
 pragma solidity = 0.6.12;
 
-import './interfaces/IUnicSwapV2Router02.sol';
+import './interfaces/IMoonSwapV2Router02.sol';
 
-contract MockRouter is IUnicSwapV2Router02 {
+contract MockRouter is IMoonSwapV2Router02 {
     address public immutable override factory;
     address public immutable override WETH;
 

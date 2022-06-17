@@ -7,16 +7,16 @@ import "@openzeppelin/contracts-upgradeable/proxy/Initializable.sol";
 import "@openzeppelin/contracts-upgradeable/math/SafeMathUpgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/token/ERC20/IERC20Upgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/token/ERC20/SafeERC20Upgradeable.sol";
-import "../interfaces/IProtocolUnicRewards.sol";
-import "./interfaces/IUnicSwapV2Router02.sol";
+import "../interfaces/IProtocolMoonRewards.sol";
+import "./interfaces/IMoonSwapV2Router02.sol";
 
-contract UnicSwapRouterIncentivized is Initializable, PausableUpgradeable, OwnableUpgradeable, ReentrancyGuardUpgradeable {
+contract MoonSwapRouterIncentivized is Initializable, PausableUpgradeable, OwnableUpgradeable, ReentrancyGuardUpgradeable {
     using SafeMathUpgradeable for uint256;
 
     uint256 private constant ONE_ETHER = 1 ether;
 
-    IUnicSwapV2Router02 public router;
-    IProtocolUnicRewards public rewarder;
+    IMoonSwapV2Router02 public router;
+    IProtocolMoonRewards public rewarder;
 
     struct WhitelistEntry {
         bool whitelisted;
@@ -35,8 +35,8 @@ contract UnicSwapRouterIncentivized is Initializable, PausableUpgradeable, Ownab
         uint256 rewardPerEthAmount,
         uint256 budgetPerBlockAmount
     ) public initializer {
-        router = IUnicSwapV2Router02(routerAddress);
-        rewarder = IProtocolUnicRewards(rewarderAddress);
+        router = IMoonSwapV2Router02(routerAddress);
+        rewarder = IProtocolMoonRewards(rewarderAddress);
         rewardPerEth = rewardPerEthAmount;
         budgetPerBlock = budgetPerBlockAmount;
 
