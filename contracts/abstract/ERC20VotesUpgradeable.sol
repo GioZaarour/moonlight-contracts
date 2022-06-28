@@ -9,6 +9,7 @@ import "@openzeppelin/contracts-upgradeable/math/SafeMathUpgradeable.sol";
 abstract contract ERC20VotesUpgradeable is ERC20BurnableUpgradeable  {
     using SafeMathUpgradeable for uint256;
 
+    //see some docs/explanation online of how erc20votes works
     //GIO IMPLEMENT A CHECK IN DELEGATE THAT MAKES SURE CURRENT/PRIOR VOTES ARE BELOW 35% OF TOTAL SUPPLY
 
     // Copied and modified from YAM code:
@@ -145,7 +146,7 @@ abstract contract ERC20VotesUpgradeable is ERC20BurnableUpgradeable  {
     view
     returns (uint256)
     {
-        require(blockNumber < block.number, "UNIC::getPriorVotes: not yet determined");
+        require(blockNumber < block.number, "MOON::getPriorVotes: not yet determined");
 
         uint32 nCheckpoints = numCheckpoints[account];
         if (nCheckpoints == 0) {
@@ -182,7 +183,8 @@ abstract contract ERC20VotesUpgradeable is ERC20BurnableUpgradeable  {
     internal
     {
         address currentDelegate = _delegates[delegator];
-        uint256 delegatorBalance = balanceOf(delegator); // balance of underlying UNICs (not scaled);
+        //here check balance of less than 35%. in write checkpoint, only give 35% of token supply
+        uint256 delegatorBalance = balanceOf(delegator); // balance of underlying tokens (not scaled);
         _delegates[delegator] = delegatee;
 
         emit DelegateChanged(delegator, currentDelegate, delegatee);

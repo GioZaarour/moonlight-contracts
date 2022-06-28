@@ -237,6 +237,12 @@ contract AuctionHandler is Initializable, OwnableUpgradeable {
         require(msg.sender == feeToSetter, "AuctionHandler: Not feeToSetter");
         feeToSetter = _feeToSetter;
     }
+    
+    function setFeeDivisor(uint256 _feeDivisor) external {
+        require(msg.sender == factory.owner() || msg.sender == feeToSetter, "AuctionHandler::setFeeDivisor: Not allowed to set fee divisor");
+        feeDivisor = _feeDivisor;
+
+    }
 
     function getBlockTimestamp() internal view returns (uint) {
         // solium-disable-next-line security/no-block-members

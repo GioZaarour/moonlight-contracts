@@ -1,33 +1,36 @@
-const Factory = artifacts.require('UnicSwap/UnicSwapV2Factory.sol');
-const Rewarder = artifacts.require('ProtocolUnicRewards.sol');
-const Router = artifacts.require('UnicSwap/UnicSwapV2Router02.sol');
-const Unic = artifacts.require('Unic.sol')
-const UnicFarm = artifacts.require('UnicFarm.sol');
-const UnicGallery = artifacts.require('UnicGallery.sol');
-const UnicPumper = artifacts.require('UnicPumper.sol');
-const Converter = artifacts.require('Converter.sol');
-const UnicFactory = artifacts.require('UnicFactory.sol');
+const { deployProxy } = require('@openzeppelin/truffle-upgrades');
+
+const Factory = artifacts.require('MoonSwap/MoonSwapV2Factory.sol');
+//const Rewarder = artifacts.require('ProtocolUnicRewards.sol');
+const Router = artifacts.require('MoonSwap/MoonSwapV2Router02.sol');
+//const Unic = artifacts.require('Unic.sol')
+//const UnicFarm = artifacts.require('UnicFarm.sol');
+//const UnicGallery = artifacts.require('UnicGallery.sol');
+//const UnicPumper = artifacts.require('UnicPumper.sol');
+const Vault = artifacts.require('Vault.sol');
+const MoonFactory = artifacts.require('MoonFactory.sol');
 const MockERC721 = artifacts.require('MockERC721.sol');
 const MockERC1155 = artifacts.require('MockERC1155.sol');
-const ConverterGovernorAlpha = artifacts.require('ConverterGovernorAlpha.sol');
-const UnicConverterGovernorAlphaFactory = artifacts.require('UnicConverterGovernorAlphaFactory.sol');
-const UnicConverterProxyTransactionFactory = artifacts.require('UnicConverterProxyTransactionFactory.sol');
-const ConverterGovernorAlphaConfig = artifacts.require('ConverterGovernorAlphaConfig.sol');
+const VaultGovernorAlpha = artifacts.require('VaultGovernorAlpha.sol');
+const MoonVaultGovernorAlphaFactory = artifacts.require('MoonVaultGovernorAlphaFactory.sol');
+const MoonVaultProxyTransactionFactory = artifacts.require('MoonVaultProxyTransactionFactory.sol');
+const VaultGovernorAlphaConfig = artifacts.require('VaultGovernorAlphaConfig.sol');
 const MockThirdPartyContract = artifacts.require('MockThirdPartyContract.sol');
 const AuctionHandler = artifacts.require('AuctionHandler.sol');
 
 
 module.exports = async function(deployer, _network, addresses) {
-  const [leia, _] = addresses;
+  const [moonlight, _] = addresses;
 
-  await deployer.deploy(Converter);
-  const converter = await Converter.deployed();
+  await deployer.deploy(Vault);
+  const converter = await Vault.deployed();
 
   // await deployer.deploy(Unic)
   // const unic = await Unic.deployed();
 
-  // await deployer.deploy(Factory, leia)
-  // const factory = await Factory.deployed();
+  const factory = await deployer.deployProxy(Factory, [moonlight], { deployer });
+  console.log('Deployed factory at', instance.address);
+  //const factory = await Factory.deployed();
 
   // await deployer.deploy(Rewarder)
   // const rewarder = await Rewarder.deployed();

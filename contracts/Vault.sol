@@ -116,6 +116,7 @@ contract Vault is IVault, IProxyTransaction, Initializable, ERC1155ReceiverUpgra
             priceFeed = AggregatorV3Interface(0x9326BFA02ADD2366b30bacB125260Af641031331);
 
             //set the moonToken CrowdfundingPrice (a temporary price during crowdfund)= 10 dollars of ETH
+            //limit moonTokenCrowdfundingPrice bound. 100,000,000,000,000
             moonTokenCrowdfundingPrice = (uint256)(10**18).mul( factory.usdCrowdfundingPrice().div( uint(getLatestPrice()).div(10**8) ) ); //convert ether to wei by * 10^18
         }
         else {
