@@ -39,7 +39,7 @@ contract AuctionHandler is Initializable, OwnableUpgradeable {
     mapping(address => uint256) public vaultBalances;
 
     IMoonFactory public factory;
-    // 36 hours
+    // 129600 or 36 hours
     uint public duration;
     // 105 = next bid must be 5% above top bid to be new top bid
     uint8 public minBidMultiplier;
@@ -238,7 +238,7 @@ contract AuctionHandler is Initializable, OwnableUpgradeable {
         feeToSetter = _feeToSetter;
     }
     
-    function setFeeDivisor(uint256 _feeDivisor) external {
+    function setFeeDivisor(uint8 _feeDivisor) external {
         require(msg.sender == factory.owner() || msg.sender == feeToSetter, "AuctionHandler::setFeeDivisor: Not allowed to set fee divisor");
         feeDivisor = _feeDivisor;
 

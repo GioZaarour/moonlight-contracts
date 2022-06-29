@@ -1,0 +1,214 @@
+Starting migrations...
+======================
+> Network name:    'goerli'
+> Network id:      5
+> Block gas limit: 30000000 (0x1c9c380)
+
+
+1_initial_migration.js
+======================
+
+   Deploying 'Migrations'
+   ----------------------
+   > transaction hash:    0x538ab462d50c203485867d331fd48aa58e87a128e5fa6a72e42aa2a5f6a32dc8
+   > Blocks: 0            Seconds: 0
+   > contract address:    0x3d53850B8EE3AC06cfC05AdCEE7270cecED1A278
+   > block number:        7135966
+   > block timestamp:     1656454946
+   > account:             0x347dA2f2Ac8594Bb007B72F05041b2B0D89264dd
+   > balance:             1.009759257499839505
+   > gas used:            160495 (0x272ef)
+   > gas price:           1.500000001 gwei
+   > value sent:          0 ETH
+   > total cost:          0.000240742500160495 ETH
+
+   > Saving migration to chain.
+   > Saving artifacts
+   -------------------------------------     
+   > Total cost:     0.000240742500160495 ETH
+
+
+2_deploy_contracts.js
+=====================
+
+   Deploying 'MoonSwapV2Factory'
+   -----------------------------
+   > transaction hash:    0xc9c3a80ac951149a427cb27febfd9f3087851b4646792970e2d34c53ae7b6ab1
+   > Blocks: 0            Seconds: 8
+   > contract address:    0x678D834D57e74cd9c5620a1E96DdB0dC69d01ABF
+   > block number:        7135969
+   > block timestamp:     1656454991
+   > account:             0x347dA2f2Ac8594Bb007B72F05041b2B0D89264dd
+   > balance:             1.003712836999793767
+   > gas used:            3985209 (0x3ccf39)
+   > gas price:           1.5 gwei
+   > value sent:          0 ETH
+   > total cost:          0.0059778135 ETH
+
+Deployed moonswap factory at 0x678D834D57e74cd9c5620a1E96DdB0dC69d01ABF
+
+   Deploying 'MoonSwapV2Router02'
+   ------------------------------
+   > transaction hash:    0xa7ceb72c4b095e01815211df5765ae919da09b1d07668f1c7a0d6b0fceb70538
+   > Blocks: 1            Seconds: 12
+   > contract address:    0x0d0c1b7d3119b6d4F5ed8a10817e5980D8FaCcdb
+   > block number:        7135970
+   > block timestamp:     1656455006
+   > account:             0x347dA2f2Ac8594Bb007B72F05041b2B0D89264dd
+   > balance:             0.996858162499793767
+   > gas used:            4569783 (0x45bab7)
+   > gas price:           1.5 gwei
+   > value sent:          0 ETH
+   > total cost:          0.0068546745 ETH
+
+Deployed moonswap router at 0x0d0c1b7d3119b6d4F5ed8a10817e5980D8FaCcdb
+
+   Deploying 'VaultGovernorAlphaConfig'
+   ------------------------------------
+   > transaction hash:    0x255387274a7937e266c4f650dd1e0a2ff78a2448083faeb91450a112f6bc7a6e
+   > Blocks: 0            Seconds: 8
+   > contract address:    0x13B460e5a025647d152d5de14b14a737d64E60B8
+   > block number:        7135971
+   > block timestamp:     1656455021
+   > account:             0x347dA2f2Ac8594Bb007B72F05041b2B0D89264dd
+   > balance:             0.995220984499793767
+   > gas used:            1091452 (0x10a77c)
+   > gas price:           1.5 gwei
+   > value sent:          0 ETH
+   > total cost:          0.001637178 ETH
+
+Deployed governor config at  0x13B460e5a025647d152d5de14b14a737d64E60B8
+
+   Deploying 'MoonVaultGovernorAlphaFactory'
+   -----------------------------------------
+   > transaction hash:    0x33730d132aa03d7ac9435ebc6a22489471f150b3da3de39676fd0a3ab41adb42
+   > Blocks: 1            Seconds: 12
+   > contract address:    0xD68dE6BCd0CC3419E9251A75E13A64E20D650519
+   > block number:        7135975
+   > block timestamp:     1656455082
+   > account:             0x347dA2f2Ac8594Bb007B72F05041b2B0D89264dd
+   > balance:             0.988385236999793767
+   > gas used:            4500150 (0x44aab6)
+   > gas price:           1.5 gwei
+   > value sent:          0 ETH
+   > total cost:          0.006750225 ETH
+
+Deployed governor factory at  0xD68dE6BCd0CC3419E9251A75E13A64E20D650519
+
+   Deploying 'MoonVaultProxyTransactionFactory'
+   --------------------------------------------
+   > transaction hash:    0x5470237b0a2157631d70de4968dca89db7e86778b31e82e901ad7858f8eae210
+   > Blocks: 1            Seconds: 12
+   > contract address:    0xfaA6217a56cc8A695f3c43346EAA02C169256c0E
+   > block number:        7135976
+   > block timestamp:     1656455097
+   > account:             0x347dA2f2Ac8594Bb007B72F05041b2B0D89264dd
+   > balance:             0.985403026999793767
+   > gas used:            1988140 (0x1e562c)
+   > gas price:           1.5 gwei
+   > value sent:          0 ETH
+   > total cost:          0.00298221 ETH
+
+Deployed vault proxy transaction factory at  0xfaA6217a56cc8A695f3c43346EAA02C169256c0E
+
+   Deploying 'MockThirdPartyContract'
+   ----------------------------------
+   > transaction hash:    0x3a14e2024deb2554293c57f3b813765fc47fe2623a798f72398f23d2ad7773a6
+   > Blocks: 1            Seconds: 20
+   > contract address:    0xc60723CD0b57E16D1A084152fE901f16BBa723f6
+   > block number:        7135978
+   > block timestamp:     1656455127
+   > account:             0x347dA2f2Ac8594Bb007B72F05041b2B0D89264dd
+   > balance:             0.985159710499793767
+   > gas used:            162211 (0x279a3)
+   > gas price:           1.5 gwei
+   > value sent:          0 ETH
+   > total cost:          0.0002433165 ETH
+
+Deployed mock contract at  0xc60723CD0b57E16D1A084152fE901f16BBa723f6
+
+   Deploying 'MoonFactory'
+   -----------------------
+   > transaction hash:    0x0313c127a468f4b8642dd2c64310718b2f0cfe5a59e88fa53dde7137eab5f7d3
+   > Blocks: 0            Seconds: 8
+   > contract address:    0x80E3701fA4c252D64d938435eEf9e4867eF9fb1B
+   > block number:        7135979
+   > block timestamp:     1656455142
+   > account:             0x347dA2f2Ac8594Bb007B72F05041b2B0D89264dd
+   > balance:             0.981999223999793767
+   > gas used:            2106991 (0x20266f)
+   > gas price:           1.5 gwei
+   > value sent:          0 ETH
+   > total cost:          0.0031604865 ETH
+
+
+   Deploying 'ProxyAdmin'
+   ----------------------
+   > transaction hash:    0xb7efb139a29d804a585c7c606d83050092f72418438578b085d8ccd527ea9a02
+   > Blocks: 0            Seconds: 8
+   > contract address:    0x717E2A31d98D38Dcb9268CeC15eBCF9c88482980
+   > block number:        7135980
+   > block timestamp:     1656455157
+   > account:             0x347dA2f2Ac8594Bb007B72F05041b2B0D89264dd
+   > balance:             0.981273193999793767
+   > gas used:            484020 (0x762b4)
+   > gas price:           1.5 gwei
+   > value sent:          0 ETH
+   > total cost:          0.00072603 ETH
+
+
+   Deploying 'TransparentUpgradeableProxy'
+   ---------------------------------------
+   > transaction hash:    0x371047aba5e114c6f31ed16f154c85e261643514ccfe6bd5727b684d5fbac335
+   > Blocks: 0            Seconds: 8
+   > contract address:    0x6afEb28c3150B371bdD7D2933B1E498992582094
+   > block number:        7135981
+   > block timestamp:     1656455172
+   > account:             0x347dA2f2Ac8594Bb007B72F05041b2B0D89264dd
+   > balance:             0.980070628999793767
+   > gas used:            801710 (0xc3bae)
+   > gas price:           1.5 gwei
+   > value sent:          0 ETH
+   > total cost:          0.001202565 ETH
+
+Deployed moonlight factory at  0x6afEb28c3150B371bdD7D2933B1E498992582094
+
+   Deploying 'AuctionHandler'
+   --------------------------
+   > transaction hash:    0xd28f050781287ef7bcf8a0ad943a2353cd78dd86879c8380bccf8404acd6a050
+   > Blocks: 1            Seconds: 24
+   > contract address:    0xaCA164fD48b3998C4a0E77554152cc21b7214b0A
+   > block number:        7135983
+   > block timestamp:     1656455202
+   > account:             0x347dA2f2Ac8594Bb007B72F05041b2B0D89264dd
+   > balance:             0.973986166999793767
+   > gas used:            4056308 (0x3de4f4)
+   > gas price:           1.5 gwei
+   > value sent:          0 ETH
+   > total cost:          0.006084462 ETH
+
+
+   Deploying 'TransparentUpgradeableProxy'
+   ---------------------------------------
+   > transaction hash:    0xecfea8bb7d06a14e10660fa2cdebe093e9e8f257c7271295b9ee1bc88b46cae9
+   > Blocks: 0            Seconds: 8
+   > contract address:    0x52dc7c457D0C0343df3A272c10B98bFC49D34f74
+   > block number:        7135984
+   > block timestamp:     1656455218
+   > account:             0x347dA2f2Ac8594Bb007B72F05041b2B0D89264dd
+   > balance:             0.972814749499793767
+   > gas used:            780945 (0xbea91)
+   > gas price:           1.5 gwei
+   > value sent:          0 ETH
+   > total cost:          0.0011714175 ETH
+
+Deployed auction handler at  0x52dc7c457D0C0343df3A272c10B98bFC49D34f74
+   > Saving migration to chain.
+   > Saving artifacts
+   -------------------------------------
+   > Total cost:        0.0367903785 ETH
+
+Summary
+=======
+> Total deployments:   12
+> Final cost:          0.037031121000160495 ETH

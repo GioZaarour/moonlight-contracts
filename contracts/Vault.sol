@@ -111,7 +111,7 @@ contract Vault is IVault, IProxyTransaction, Initializable, ERC1155ReceiverUpgra
             * Network: Kovan
             * Aggregator: ETH/USD
             * Address: 0x9326BFA02ADD2366b30bacB125260Af641031331
-            * set the price feed. change to eth mainnet after testing is done
+            * set the price feed. **change to eth mainnet after testing is done**
             */
             priceFeed = AggregatorV3Interface(0x9326BFA02ADD2366b30bacB125260Af641031331);
 

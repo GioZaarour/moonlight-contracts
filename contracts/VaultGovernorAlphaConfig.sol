@@ -35,7 +35,7 @@ contract VaultGovernorAlphaConfig is Ownable {
         quorumVotesDivider = 16; // 62.5%
         proposalThresholdDivider = 2000; // 0.5%
         proposalMaxOperations = 10;
-        votingPeriod = 17280;
+        votingPeriod = 17280; //64 hours. measured in blocks. 1 block ~ 13.2 seconds
         votingDelay = 1;
 
         gracePeriod = 14 days;

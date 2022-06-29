@@ -22,21 +22,27 @@ const AuctionHandler = artifacts.require('AuctionHandler.sol');
 module.exports = async function(deployer, _network, addresses) {
   const [moonlight, _] = addresses;
 
-  await deployer.deploy(Vault);
-  const converter = await Vault.deployed();
+  /*await deployer.deploy(Vault);
+  const vault = await Vault.deployed();
+  console.log('Deployed uninitialized vault at', vault.address); */
+
+  /*const vault = await deployProxy(Vault, [], { deployer });
+  console.log('Deployed uninitialized vault at', vault.address); */
 
   // await deployer.deploy(Unic)
   // const unic = await Unic.deployed();
 
-  const factory = await deployer.deployProxy(Factory, [moonlight], { deployer });
-  console.log('Deployed factory at', instance.address);
-  //const factory = await Factory.deployed();
+  //moonswap factory
+  await deployer.deploy(Factory, moonlight);
+  const factory = await Factory.deployed();
+  console.log('Deployed moonswap factory at', factory.address);
 
   // await deployer.deploy(Rewarder)
   // const rewarder = await Rewarder.deployed();
 
-  // await deployer.deploy(Router, factory.address, "0xc778417e063141139fce010982780140aa0cd5ab"/*, "0xE5aEE6abDbe9589c927f96911A452448aD453431"*/)
-  // const router = await Router.deployed();
+  await deployer.deploy(Router, factory.address, "0xB4FBF271143F4FBf7B91A5ded31805e42b2208d6" /*goerli address for WETH*/);
+  const router = await Router.deployed();
+  console.log('Deployed moonswap router at', router.address);
 
   // await deployer.deploy(UnicFarm, unic.address, leia, 19, 20, 1, 10456340, 6000)
   // const unicFarm = await UnicFarm.deployed();
@@ -44,31 +50,34 @@ module.exports = async function(deployer, _network, addresses) {
   // await deployer.deploy(UnicGallery, unic.address)
   // const unicGallery = await UnicGallery.deployed();
 
-  // await deployer.deploy(UnicFactory/*, leia, 100, "10000000000000000000000"*/);
-  // const unicFactory = await UnicFactory.deployed();
+  await deployer.deploy(VaultGovernorAlphaConfig);
+  const vaultGovernorAlphaConfig = await VaultGovernorAlphaConfig.deployed();
+  await vaultGovernorAlphaConfig.setVotingPeriod(200);
+  await vaultGovernorAlphaConfig.setVotingDelay(1);
+  console.log('Deployed governor config at ', vaultGovernorAlphaConfig.address);
 
-  // await deployer.deploy(ConverterGovernorAlphaConfig);
-  // const converterGovernorAlphaConfig = await ConverterGovernorAlphaConfig.deployed();
-  // await converterGovernorAlphaConfig.setVotingPeriod(200);
-  // await converterGovernorAlphaConfig.setVotingDelay(1);
+  await deployer.deploy(MoonVaultGovernorAlphaFactory);
+  const moonVaultGovernorAlphaFactory = await MoonVaultGovernorAlphaFactory.deployed();
+  console.log('Deployed governor factory at ', moonVaultGovernorAlphaFactory.address);
 
-  // await deployer.deploy(UnicConverterGovernorAlphaFactory);
-  // const unicConverterGovernorAlphaFactory = await UnicConverterGovernorAlphaFactory.deployed();
-
-  // await deployer.deploy(UnicConverterProxyTransactionFactory, converterGovernorAlphaConfig.address, unicConverterGovernorAlphaFactory.address);
-  // const unicConverterProxyTransactionFactory = await UnicConverterProxyTransactionFactory.deployed();
+  await deployer.deploy(MoonVaultProxyTransactionFactory, vaultGovernorAlphaConfig.address, moonVaultGovernorAlphaFactory.address);
+  const moonVaultProxyTransactionFactory = await MoonVaultProxyTransactionFactory.deployed();
+  console.log('Deployed vault proxy transaction factory at ', moonVaultProxyTransactionFactory.address);
 
   // // const converterGovernorAlphaAddress = await unicFactory.getGovernorAlpha(uLeiaAddress);
   // // const converterGovernorAlpha = await ConverterGovernorAlpha.at(converterGovernorAlphaAddress);
   // // console.log('converterGovernorAlphaAddress' + converterGovernorAlphaAddress);
 
-  // await deployer.deploy(MockThirdPartyContract);
-  // const mockThirdPartyContract = await MockThirdPartyContract.deployed();
+  await deployer.deploy(MockThirdPartyContract);
+  const mockThirdPartyContract = await MockThirdPartyContract.deployed();
+  console.log('Deployed mock contract at ', mockThirdPartyContract.address);
 
-  // await deployer.deploy(AuctionHandler);
-  // const auctionHandler = await AuctionHandler.deployed();
+  //initialize everything
+  const moonFactory = await deployProxy(MoonFactory, [moonlight, 100, "10000000000000000000000", moonVaultProxyTransactionFactory.address, 2419000, 20, 10], { deployer });
+  console.log('Deployed moonlight factory at ', moonFactory.address);
 
-  // await unicFactory.initialize(leia, 100, "10000000000000000000000", unic.address, unicConverterProxyTransactionFactory.address);
-  // await unicFactory.setAuctionHandler(auctionHandler.address);
-  // await auctionHandler.initialize(unicFactory.address, 259200, 105, 300, 100, leia, leia);
+  const auctionHandler = await deployProxy(AuctionHandler, [moonFactory.address, 129600, 105, 300, 50, moonlight, moonlight], { deployer });
+  console.log('Deployed auction handler at ', auctionHandler.address);
+
+  await moonFactory.setAuctionHandler(auctionHandler.address);
 };

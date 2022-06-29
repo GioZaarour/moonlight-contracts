@@ -25,7 +25,7 @@ contract MoonFactory is IMoonFactory, Initializable, OwnableUpgradeable {
 
     address public override auctionHandler;
 
-    //fee divisor taken on issuance of fractioanalized tokens (paid in moonToken)
+    //fee divisor taken on issuance of fractionalized tokens (paid in moonToken)
     uint256 public override feeDivisor; 
 
     //fee divisor taken on crowdfund contributions
@@ -35,6 +35,7 @@ contract MoonFactory is IMoonFactory, Initializable, OwnableUpgradeable {
 
     address public override proxyTransactionFactory;
 
+    //2419000 or 4 weeks
     uint public override crowdfundDuration;
 
     uint public override usdCrowdfundingPrice;
