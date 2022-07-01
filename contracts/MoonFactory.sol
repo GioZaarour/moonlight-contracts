@@ -108,12 +108,12 @@ contract MoonFactory is IMoonFactory, Initializable, OwnableUpgradeable {
     }
 
     function setFeeTo(address _feeTo) external override {
-        require(msg.sender == feeToSetter, 'Moon: FORBIDDEN');
+        require(msg.sender == feeToSetter, 'Moonlight: FORBIDDEN');
         feeTo = _feeTo;
     }
 
     function setFeeToSetter(address _feeToSetter) external override {
-        require(msg.sender == feeToSetter, 'Moon: FORBIDDEN');
+        require(msg.sender == feeToSetter, 'Moonlight: FORBIDDEN');
         feeToSetter = _feeToSetter;
     }
 

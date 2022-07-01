@@ -172,14 +172,14 @@ contract Vault is IVault, IProxyTransaction, Initializable, ERC1155ReceiverUpgra
         vaultTimeLock = _vaultTimeLock;
     }
 
-    //can add multiple NFTs with this but only if they come from the same collection (contractAddr)
-    //otherwise will have to call this func multiple times for different NFT contracts
+    //can add multiple NFTs with this
     //notify user that buy now price is for the whole bundle
+    //*Note: buy now price in WEI. all input prices should be in WEI
     function addTargetNft(uint256[] calldata tokenIDs, uint256[] calldata amounts, uint256[] calldata buyNowPrices, address[] calldata contractAddr) external {
         require(msg.sender == issuer, "Vault: Only issuer can add target NFTs");
         require(tokenIDs.length <= 50, "Vault: A maximum of 50 tokens can be added in one go");
         require(tokenIDs.length > 0, "Vault: You must specify at least one token ID");
-        require(tokenIDs.length == buyNowPrices.length, "Array length mismatch");
+        require(tokenIDs.length == buyNowPrices.length && tokenIDs.length == amounts.length && tokenIDs.length == contractAddr.length, "Vault::addTargetNft: Array length mismatch");
         require(crowdfundingMode == true, "Vault: Crowdfund is not on");
 
         for (uint8 i = 0; i < 50; i++){
