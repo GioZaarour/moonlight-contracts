@@ -4,11 +4,12 @@ node_modules
 yarn-error.log
 .openzeppelin
 .vscode
-truffle-config.js
 LICENSE.txt
 coverage.json
 .env
 MVP-void
+hardhat.config.js
+.coverage
 
 # Openzeppelin files for local deploys
 .openzeppelin/unknown-1337.json

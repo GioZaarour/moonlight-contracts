@@ -73,11 +73,12 @@ module.exports = async function(deployer, _network, addresses) {
   console.log('Deployed mock contract at ', mockThirdPartyContract.address);
 
   //initialize everything
-  const moonFactory = await deployProxy(MoonFactory, [moonlight, 100, "10000000000000000000000", moonVaultProxyTransactionFactory.address, 2419000, 20, 10], { deployer });
+  const moonFactory = await deployProxy(MoonFactory, [moonlight, 100, "10000000000000000000000", moonVaultProxyTransactionFactory.address, 2419000, 20, 1], { deployer });
   console.log('Deployed moonlight factory at ', moonFactory.address);
 
   const auctionHandler = await deployProxy(AuctionHandler, [moonFactory.address, 129600, 105, 300, 50, moonlight, moonlight], { deployer });
   console.log('Deployed auction handler at ', auctionHandler.address);
 
   await moonFactory.setAuctionHandler(auctionHandler.address);
+  console.log('Deployments done');
 };

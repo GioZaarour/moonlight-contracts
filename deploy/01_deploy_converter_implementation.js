@@ -1,7 +1,7 @@
 module.exports = async ({ getNamedAccounts, deployments }) => {
   const { deploy } = deployments;
   const { deployer } = await getNamedAccounts();
-  await deploy('Converter', {
+  await deploy('Vault', {
     from: deployer,
     log: true,
     proxy: {
@@ -10,4 +10,4 @@ module.exports = async ({ getNamedAccounts, deployments }) => {
     },
   });
 };
-module.exports.tags = ['Converter'];
+module.exports.tags = ['Vault'];

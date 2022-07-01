@@ -38,6 +38,7 @@ contract MoonFactory is IMoonFactory, Initializable, OwnableUpgradeable {
     //2419000 or 4 weeks
     uint public override crowdfundDuration;
 
+    //$1
     uint public override usdCrowdfundingPrice;
 
     mapping(address => uint) public override getMoonToken; //maps address to the index of the moonToken in the moonTokens array

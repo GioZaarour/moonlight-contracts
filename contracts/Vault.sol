@@ -318,6 +318,8 @@ contract Vault is IVault, IProxyTransaction, Initializable, ERC1155ReceiverUpgra
         require (crowdfundingMode == true, "Vault: Crowdfund is not on");
         require(active == false, "Vault: Token is already active");
         require(getBlockTimestamp() < endTime, "Vault: Crowdfund has terminated");
+        //require that the purchase is at least $10
+        require(amount >= 10, "Vault::purchaseCrowdfunding: Minimum buy is $10");
 
         //first case: conbribution balance (including this contribution) is less than or equal to the crowdfundgoal
         if ( address(this).balance.sub(contributionFees) <= crowdfundGoal) {
