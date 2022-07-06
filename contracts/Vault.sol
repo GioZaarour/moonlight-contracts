@@ -393,7 +393,7 @@ contract Vault is IVault, IProxyTransaction, Initializable, ERC1155ReceiverUpgra
     }
 
     //another alternative if the target NFT is delisted or bought before crowdfunding succeeds
-    function updateTarget(uint _targetNftIndex, uint256 _tokenID, uint256 _amount, uint256 buyNowPrice, address _contractAddr) external {
+    function updateTarget(uint _targetNftIndex, uint256 _tokenID, uint256 _amount, uint256 _buyNowPrice, address _contractAddr) external {
         require(msg.sender == issuer || msg.sender == factory.owner(), "Vault: updateTargets(): only issuer or owner can update");
         require(crowdfundingMode == true, "Vault: updateTargets(): Crowdfund is not on");
         require(getBlockTimestamp() < endTime, "Vault: updateTargets(): Crowdfund has ended");
@@ -401,7 +401,7 @@ contract Vault is IVault, IProxyTransaction, Initializable, ERC1155ReceiverUpgra
         //update targetNFTs
         targetNfts[_targetNftIndex].tokenId = _tokenID;
         targetNfts[_targetNftIndex].amount = _amount;
-        targetNfts[_targetNftIndex].buyNowPrice = buyNowPrice;
+        targetNfts[_targetNftIndex].buyNowPrice = _buyNowPrice;
         targetNfts[_targetNftIndex].nftContract = _contractAddr;
 
         updateCrowdfundGoal();

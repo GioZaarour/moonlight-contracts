@@ -22,7 +22,7 @@ contract MoonSwapV2Pair is MoonSwapV2ERC20 {
     uint112 private reserve1;           // uses single storage slot, accessible via getReserves
     uint32  private blockTimestampLast; // uses single storage slot, accessible via getReserves
 
-    uint public price0CumulativeLast;
+    uint public price0CumulativeLast; //the price of token 0 WRT token 1
     uint public price1CumulativeLast;
     uint public kLast; // reserve0 * reserve1, as of immediately after the most recent liquidity event
 
